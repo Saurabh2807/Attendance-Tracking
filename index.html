@@ -11,50 +11,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0c142b;
-            --bg2: #19233f;
-            --primary: #468df9;
-            --green: #5be9a6;
-            --danger: #ff5c5c;
-            --success: #6fe4a7;
-            --text: #ffffff;
-            --dim: #9ca3af;
-            --border: #2c3859;
-            --card-bg: rgba(25,35,63,0.7);
-            --card-blur: blur(14px);
+            --bg: #0c142b; --bg2: #19233f; --primary: #468df9; --green: #5be9a6;
+            --danger: #ff5c5c; --success: #6fe4a7; --text: #ffffff; --dim: #9ca3af;
+            --border: #2c3859; --card-bg: rgba(25,35,63,0.7); --card-blur: blur(14px);
             --card-border: rgba(255,255,255,0.07);
         }
         .light {
-            --bg: #f0f4ff;
-            --bg2: #ffffff;
-            --text: #1a1f36;
-            --dim: #64748b;
-            --border: #cbd5e1;
-            --card-bg: rgba(255,255,255,0.75);
-            --card-border: rgba(0,0,0,0.06);
+            --bg: #f0f4ff; --bg2: #ffffff; --text: #1a1f36; --dim: #64748b;
+            --border: #cbd5e1; --card-bg: rgba(255,255,255,0.75); --card-border: rgba(0,0,0,0.06);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            margin: 0; font-family: 'Space Grotesk', sans-serif;
-            background-color: var(--bg); color: var(--text);
-            padding-bottom: 80px; overflow-x: hidden;
+            margin: 0; font-family: 'Space Grotesk', sans-serif; background-color: var(--bg); color: var(--text);
+            padding-bottom: 80px; overflow-x: hidden; min-height: 100vh; transition: background-color 0.3s, color 0.3s;
             background-image: linear-gradient(180deg, #101c40 0%, #0d1223 60%, #0c142b 100%);
-            background-size: cover; background-attachment: fixed; min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s;
         }
         body.light { background-image: linear-gradient(180deg, #dbeafe 0%, #eff6ff 60%, #f0f4ff 100%); }
-
         header {
             padding: 20px 20px 14px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 100; background: rgba(12,20,43,0.85); transition: background 0.3s;
+            position: sticky; top: 0; z-index: 100; background: rgba(12,20,43,0.85);
         }
         body.light header { background: rgba(240,244,255,0.85); }
         .header-left h1 { margin: 0; font-size: 1.4rem; letter-spacing: -0.5px; }
         .header-left .sub-header { color: var(--dim); font-size: 0.8rem; margin-top: 3px; display: flex; align-items: center; gap: 8px; }
-        .change-btn { font-size: 0.7rem; padding: 3px 12px; border-radius: 20px; background: rgba(70,141,249,0.15); color: var(--primary); border: 1px solid rgba(70,141,249,0.3); cursor: pointer; font-family: inherit; font-weight: 600; }
+        .change-btn { font-size: 0.7rem; padding: 3px 12px; border-radius: 20px; background: rgba(70,141,249,0.15); color: var(--primary); border: 1px solid rgba(70,141,249,0.3); cursor: pointer; font-family: inherit; }
         .theme-btn { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: var(--text); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
         nav {
             position: fixed; bottom: 0; width: 100%; background: rgba(12,20,43,0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             display: flex; justify-content: space-around; padding: 10px 0 12px; border-top: 1px solid var(--border); z-index: 1000;
@@ -63,12 +45,10 @@
         .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--dim); font-size: 0.68rem; cursor: pointer; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 1.3rem; margin-bottom: 3px; }
-
         .container { padding: 16px; max-width: 600px; margin: 0 auto; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeUp 0.3s ease; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         #section-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; }
         .sec-btn { width: 100%; max-width: 340px; padding: 20px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); margin-bottom: 14px; text-align: left; cursor: pointer; }
         .card { background: var(--card-bg); backdrop-filter: var(--card-blur); border-radius: 20px; padding: 18px; margin-bottom: 14px; border: 1px solid var(--card-border); box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
@@ -76,7 +56,6 @@
         .stat-card { background: rgba(255,255,255,0.04); padding: 14px; border-radius: 14px; text-align: center; border: 1px solid var(--card-border); }
         .stat-val { display: block; font-size: 1.5rem; font-weight: 700; color: var(--primary); }
         .stat-label { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; }
-
         .subj-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .subj-name { font-weight: 600; font-size: 0.95rem; }
         .tag { font-size: 0.62rem; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700; }
@@ -84,24 +63,23 @@
         .tag-lab { background: rgba(147,51,234,0.18); color: #d1c4e9; }
         .prog-wrap { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .prog-bar { height: 100%; transition: width 0.6s ease; }
-
         input[type="date"] { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 12px; margin-bottom: 12px; font-family: inherit; }
         button { width: 100%; padding: 13px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-family: inherit; }
         .btn-p { background: var(--primary); color: white; }
         .btn-save { background: var(--primary); color: white; margin-top: 16px; font-weight: 700; }
-
         .period-item { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--border); }
         .tog-grp { display: flex; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 3px; gap: 2px; }
         .tog-btn { padding: 7px 11px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; background: none; color: var(--dim); border: none; font-family: inherit; }
         .tog-btn.active.p { background: var(--green); color: #0c142b; }
         .tog-btn.active.a { background: var(--danger); color: white; }
         .tog-btn.active.r { background: rgba(255,255,255,0.15); color: var(--text); }
-
+        .alert-box { padding: 10px 14px; border-radius: 10px; font-size: 0.83rem; margin-top: 10px; text-align: center; font-weight: 600; }
+        .alert-safe { background: rgba(91,233,166,0.1); color: var(--success); border: 1px solid rgba(91,233,166,0.2); }
+        .alert-danger { background: rgba(255,92,92,0.1); color: var(--danger); border: 1px solid rgba(255,92,92,0.2); }
         table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
         th { text-align: left; color: var(--dim); padding: 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; }
         td { padding: 10px; border-bottom: 1px solid var(--border); }
         select { width: 100%; background: var(--bg2); color: var(--text); border: 1px solid var(--border); padding: 12px; border-radius: 12px; margin-bottom: 14px; font-family: inherit; }
-
         #app { display: none; }
     </style>
 </head>
@@ -151,7 +129,7 @@
 </div>
 
 <script>
-const HOLIDAYS = ['2026-03-27','2026-03-30']; 
+const HOLIDAYS = ['2026-03-27','2026-03-30','2026-04-14','2026-05-01','2026-06-26']; 
 const SECTIONS = {
     A4: {
         key: 'att_A4', label: 'Section A-4',
