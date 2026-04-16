@@ -1,0 +1,494 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Attendance Tracking">
+    <title>Attendance Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0c142b;
+            --bg2: #19233f;
+            --primary: #468df9;
+            --green: #5be9a6;
+            --danger: #ff5c5c;
+            --success: #6fe4a7;
+            --text: #ffffff;
+            --dim: #9ca3af;
+            --border: #2c3859;
+            --card-bg: rgba(25,35,63,0.7);
+            --card-blur: blur(14px);
+            --card-border: rgba(255,255,255,0.07);
+        }
+        .light {
+            --bg: #f0f4ff;
+            --bg2: #ffffff;
+            --text: #1a1f36;
+            --dim: #64748b;
+            --border: #cbd5e1;
+            --card-bg: rgba(255,255,255,0.75);
+            --card-border: rgba(0,0,0,0.06);
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0; font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg); color: var(--text);
+            padding-bottom: 80px; overflow-x: hidden;
+            background-image: linear-gradient(180deg, #101c40 0%, #0d1223 60%, #0c142b 100%);
+            background-size: cover; background-attachment: fixed; min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.light {
+            background-image: linear-gradient(180deg, #dbeafe 0%, #eff6ff 60%, #f0f4ff 100%);
+        }
+
+        /* HEADER */
+        header {
+            padding: 20px 20px 14px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(12,20,43,0.85);
+            transition: background 0.3s;
+        }
+        body.light header { background: rgba(240,244,255,0.85); }
+        .header-left h1 { margin: 0; font-size: 1.4rem; letter-spacing: -0.5px; }
+        .header-left .sub-header { color: var(--dim); font-size: 0.8rem; margin-top: 3px; display: flex; align-items: center; gap: 8px; }
+        .change-btn { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(70,141,249,0.15); color: var(--primary); border: 1px solid rgba(70,141,249,0.3); cursor: pointer; font-family: inherit; font-weight: 600; width: auto; padding: 3px 12px; }
+        .header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .theme-btn {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+            color: var(--text); font-size: 1.1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .theme-btn:hover { background: rgba(255,255,255,0.15); }
+
+        /* NAV */
+        nav {
+            position: fixed; bottom: 0; width: 100%;
+            background: rgba(12,20,43,0.95);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            display: flex; justify-content: space-around;
+            padding: 10px 0 12px; border-top: 1px solid var(--border); z-index: 1000;
+            transition: background 0.3s;
+        }
+        body.light nav { background: rgba(240,244,255,0.95); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--dim); font-size: 0.68rem; cursor: pointer; transition: color 0.2s; padding: 0 10px; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 1.3rem; margin-bottom: 3px; transition: transform 0.2s; }
+        .nav-item.active .nav-icon { transform: scale(1.15); }
+
+        /* CONTAINER */
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeUp 0.3s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* SECTION SCREEN */
+        #section-screen {
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 40px 24px;
+        }
+        #section-screen h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; text-align: center; }
+        #section-screen p { color: var(--dim); font-size: 0.9rem; margin-bottom: 36px; text-align: center; line-height: 1.6; }
+        .sec-btn {
+            width: 100%; max-width: 340px; padding: 20px; border-radius: 20px;
+            border: 1px solid var(--border); background: var(--card-bg);
+            backdrop-filter: var(--card-blur); -webkit-backdrop-filter: var(--card-blur);
+            color: var(--text); font-family: inherit; cursor: pointer;
+            margin-bottom: 14px; transition: all 0.2s; text-align: left;
+        }
+        .sec-btn:active { transform: scale(0.97); }
+        .sec-btn .st { font-size: 1.15rem; font-weight: 700; }
+        .sec-btn .ss { font-size: 0.8rem; color: var(--dim); margin-top: 4px; }
+        .sec-btn.a4 { border-color: rgba(70,141,249,0.4); }
+        .sec-btn.a4 .st { color: var(--primary); }
+        .sec-btn.b11 { border-color: rgba(91,233,166,0.4); }
+        .sec-btn.b11 .st { color: var(--green); }
+
+        /* CARDS */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: var(--card-blur); -webkit-backdrop-filter: var(--card-blur);
+            border-radius: 20px; padding: 18px; margin-bottom: 14px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeUp 0.3s ease;
+        }
+        .card:active { transform: scale(0.99); }
+
+        /* STAT GRID */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .stat-card {
+            background: rgba(255,255,255,0.04); padding: 14px; border-radius: 14px;
+            text-align: center; border: 1px solid var(--card-border);
+            transition: transform 0.2s;
+        }
+        body.light .stat-card { background: rgba(0,0,0,0.04); }
+        .stat-val { display: block; font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* SUBJECT CARDS */
+        .subj-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .subj-name { font-weight: 600; font-size: 0.95rem; }
+        .subj-meta { font-size: 0.68rem; color: var(--dim); margin-top: 2px; }
+        .tag { font-size: 0.62rem; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700; white-space: nowrap; }
+        .tag-theory { background: rgba(70,141,249,0.18); color: #80b3fc; }
+        .tag-lab { background: rgba(147,51,234,0.18); color: #d1c4e9; }
+        .tag-ml { background: rgba(156,163,175,0.15); color: #9ca3af; }
+        .prog-wrap { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; margin: 10px 0; overflow: hidden; }
+        body.light .prog-wrap { background: rgba(0,0,0,0.08); }
+        .prog-bar { height: 100%; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); border-radius: 4px; }
+        .subj-footer { display: flex; justify-content: space-between; font-size: 0.78rem; }
+
+        /* FORM */
+        input[type="date"] {
+            width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+            color: var(--text); padding: 12px; border-radius: 12px;
+            font-family: inherit; margin-bottom: 12px; font-size: 0.9rem; color-scheme: dark;
+            transition: border-color 0.2s;
+        }
+        body.light input[type="date"] { background: rgba(0,0,0,0.04); color-scheme: light; }
+        input[type="date"]:focus { outline: none; border-color: var(--primary); }
+        button { width: 100%; padding: 13px; border-radius: 12px; border: none; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.18s; }
+        button:active { transform: scale(0.97); }
+        .btn-p { background: var(--primary); color: white; margin-bottom: 10px; }
+        .btn-save { background: var(--primary); color: white; margin-top: 16px; font-weight: 700; letter-spacing: 0.3px; }
+
+        /* QUICK ACTION BUTTONS */
+        .quick-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+        .qbtn { padding: 11px 6px; border-radius: 12px; font-size: 0.78rem; font-weight: 700; border: 1px solid; cursor: pointer; font-family: inherit; transition: all 0.18s; }
+        .qbtn:active { transform: scale(0.96); }
+        .qbtn-p { background: rgba(91,233,166,0.12); color: var(--green); border-color: rgba(91,233,166,0.3); }
+        .qbtn-a { background: rgba(255,92,92,0.12); color: var(--danger); border-color: rgba(255,92,92,0.3); }
+        .qbtn-r { background: rgba(255,255,255,0.05); color: var(--dim); border-color: var(--border); }
+
+        /* PERIOD ITEMS */
+        .period-item { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--border); }
+        .period-info { flex: 1; }
+        .period-name { font-weight: 500; font-size: 0.92rem; }
+        .period-pts { font-size: 0.72rem; color: var(--dim); margin-top: 2px; }
+        .tog-grp { display: flex; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 3px; gap: 2px; }
+        body.light .tog-grp { background: rgba(0,0,0,0.06); }
+        .tog-btn { padding: 7px 11px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: var(--dim); background: none; border: none; font-family: inherit; }
+        .tog-btn.active.p { background: var(--green); color: #0c142b; }
+        .tog-btn.active.a { background: var(--danger); color: white; }
+        .tog-btn.active.r { background: rgba(255,255,255,0.15); color: var(--text); }
+
+        /* CALC */
+        .calc-row { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px; }
+        .calc-val { font-weight: 600; }
+        .alert-box { padding: 10px 14px; border-radius: 10px; font-size: 0.83rem; margin-top: 10px; text-align: center; font-weight: 600; }
+        .alert-safe { background: rgba(91,233,166,0.1); color: var(--success); border: 1px solid rgba(91,233,166,0.2); }
+        .alert-danger { background: rgba(255,92,92,0.1); color: var(--danger); border: 1px solid rgba(255,92,92,0.2); }
+
+        /* TABLE */
+        table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+        th { text-align: left; color: var(--dim); padding: 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        td { padding: 10px; border-bottom: 1px solid var(--border); }
+        select { width: 100%; background: var(--bg2); color: var(--text); border: 1px solid var(--border); padding: 12px; border-radius: 12px; margin-bottom: 14px; font-family: inherit; }
+
+        /* HOLIDAY MSG */
+        .holiday-msg-box { text-align: center; padding: 36px 20px; color: var(--dim); }
+        .holiday-emoji { font-size: 2.5rem; margin-bottom: 10px; }
+
+        #app { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="section-screen">
+    <h2>Attendance Tracking</h2>
+    <p>B.Tech II Semester • Session 2025-26<br>Apna section select karo</p>
+    <button class="sec-btn a4" onclick="selectSection('A4')">
+        <div class="st">Section A-4</div>
+        <div class="ss">LNCTE • CSE • Set A</div>
+    </button>
+    <button class="sec-btn b11" onclick="selectSection('B11')">
+        <div class="st">Section B-11</div>
+        <div class="ss">LNCT&S • AIML • Set B</div>
+    </button>
+</div>
+
+<div id="app">
+    <header>
+        <div class="header-left">
+            <h1>Attendance Tracking</h1>
+            <div class="sub-header">
+                <span id="sec-label"></span>
+                <button class="change-btn" onclick="changeSection()">Change</button>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="tab-overview" class="tab-content active">
+            <div class="stat-grid" id="stat-grid"></div>
+            <div id="subject-cards-container"></div>
+        </div>
+
+        <div id="tab-mark" class="tab-content">
+            <div class="card">
+                <label style="display:block;margin-bottom:8px;font-size:0.8rem;color:var(--dim)">Select Date</label>
+                <input type="date" id="date-picker">
+                <button class="btn-p" onclick="loadDay()">Load Schedule</button>
+                <div id="day-ui" style="display:none;margin-top:18px;">
+                    <div class="quick-btns">
+                        <button class="qbtn qbtn-p" onclick="markAll('p')">✓ All Present</button>
+                        <button class="qbtn qbtn-a" onclick="markAll('a')">✗ All Absent</button>
+                        <button class="qbtn qbtn-r" onclick="markAll('r')">↺ Reset</button>
+                    </div>
+                    <div id="period-list"></div>
+                    <button class="btn-save" onclick="saveAtt()">Save Attendance</button>
+                </div>
+                <div id="holiday-msg" style="display:none;">
+                    <div class="holiday-msg-box">
+                        <div class="holiday-emoji">🎉</div>
+                        <div id="holiday-msg-text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-subjects" class="tab-content">
+            <select id="sub-filter" onchange="renderSubjectLogs()"></select>
+            <div class="card" style="padding:10px;overflow-x:auto;">
+                <table><thead><tr><th>Date</th><th>Day</th><th>Classes</th><th>Status</th></tr></thead>
+                <tbody id="log-body"></tbody></table>
+            </div>
+        </div>
+
+        <div id="tab-skip" class="tab-content">
+            <div id="skip-container"></div>
+        </div>
+    </div>
+
+    <nav>
+        <div class="nav-item active" onclick="switchTab('overview',this)"><span class="nav-icon">📊</span><span>Overview</span></div>
+        <div class="nav-item" onclick="switchTab('mark',this)"><span class="nav-icon">📅</span><span>Mark</span></div>
+        <div class="nav-item" onclick="switchTab('subjects',this)"><span class="nav-icon">📚</span><span>Logs</span></div>
+        <div class="nav-item" onclick="switchTab('skip',this)"><span class="nav-icon">⚖️</span><span>Skip Calc</span></div>
+    </nav>
+</div>
+
+<script>
+const HOLIDAYS = ['2026-03-27','2026-04-14','2026-05-01','2026-06-26'];
+const SECTIONS = {
+    A4: {
+        label: 'Section A-4 | LNCTE',
+        key: 'att_A4',
+        subjects: {
+            'BT201':    {name:'Engg Physics',     type:'Theory', total:75,  req75:true},
+            'BT202':    {name:'Mathematics-II',   type:'Theory', total:75,  req75:true},
+            'BT203':    {name:'Basic Mech Engg',  type:'Theory', total:73,  req75:true},
+            'BT204':    {name:'Basic Civil Engg', type:'Theory', total:75,  req75:true},
+            'BT205':    {name:'Basic Comp Engg',  type:'Theory', total:61,  req75:true},
+            'BT201Lab': {name:'Physics Lab',      type:'Lab',    total:32,  req75:true},
+            'BT204Lab': {name:'Civil Lab',        type:'Lab',    total:28,  req75:true},
+            'BT206':    {name:'LLS Lab',          type:'Lab',    total:32,  req75:true},
+            'BT203Lab': {name:'Mech Lab',         type:'Lab',    total:32,  req75:true},
+            'BT205Lab': {name:'Computer Lab',     type:'Lab',    total:26,  req75:true},
+            'ML':       {name:'Mentor/Library',   type:'M/L',    total:16,  req75:false}
+        },
+        tt: {
+            1:[{s:'BT204',p:1},{s:'BT202',p:1},{s:'BT201',p:1},{s:'BT201',p:1},{s:'BT205',p:1},{s:'ML',p:1}],
+            2:[{s:'BT203',p:1},{s:'BT203',p:1},{s:'BT202',p:1},{s:'BT204',p:1},{s:'BT201',p:1}],
+            3:[{s:'BT206',p:2},{s:'BT201',p:1},{s:'BT205',p:1},{s:'BT203',p:1},{s:'BT202',p:1},{s:'BT204',p:1}],
+            4:[{s:'BT204',p:1},{s:'BT202',p:1},{s:'BT203',p:1},{s:'BT205',p:1},{s:'BT201',p:1},{s:'BT203Lab',p:2}],
+            5:[{s:'BT205',p:1},{s:'BT202',p:1},{s:'BT204',p:1},{s:'BT203',p:1},{s:'BT201',p:1},{s:'BT205Lab',p:2}]
+        }
+    },
+    B11: {
+        label: 'Section B-11 | LNCT&S',
+        key: 'att_B11',
+        subjects: {
+            'BT101':    {name:'Engg Chemistry',     type:'Theory', total:75,  req75:true},
+            'BT202':    {name:'Mathematics-II',      type:'Theory', total:75,  req75:true},
+            'BT103':    {name:'Engg Communication',  type:'Theory', total:59,  req75:true},
+            'BT104':    {name:'BEEE',                type:'Theory', total:75,  req75:true},
+            'BT105':    {name:'Engg Graphics',       type:'Theory', total:60,  req75:true},
+            'BT105Lab': {name:'Engg Graphics Lab',   type:'Lab',    total:45,  req75:true},
+            'BT103Lab': {name:'Engg Comm Lab',       type:'Lab',    total:30,  req75:true},
+            'BT104Lab': {name:'BEEE Lab',            type:'Lab',    total:32,  req75:true},
+            'BT101Lab': {name:'Engg Chemistry Lab',  type:'Lab',    total:32,  req75:true},
+            'BT106':    {name:'Mfg Practices Lab',   type:'Lab',    total:26,  req75:true},
+            'ML':       {name:'Mentor/Library',      type:'M/L',    total:16,  req75:false}
+        },
+        tt: {
+            1:[{s:'BT101',p:1},{s:'BT202',p:1},{s:'BT103',p:1},{s:'BT104',p:1},{s:'BT105Lab',p:3}],
+            2:[{s:'BT101',p:1},{s:'BT202',p:1},{s:'BT103',p:1},{s:'BT104',p:1},{s:'BT105',p:1},{s:'BT103Lab',p:2}],
+            3:[{s:'BT101',p:1},{s:'BT202',p:1},{s:'BT103',p:1},{s:'BT104',p:1},{s:'BT105',p:1},{s:'BT104Lab',p:2}],
+            4:[{s:'BT101',p:1},{s:'BT202',p:1},{s:'BT104',p:1},{s:'BT105',p:1},{s:'BT101Lab',p:2},{s:'ML',p:1}],
+            5:[{s:'BT101',p:1},{s:'BT202',p:1},{s:'BT103',p:1},{s:'BT104',p:1},{s:'BT105',p:1},{s:'BT106',p:2}]
+        }
+    }
+};
+
+let curSec = null, attData = {};
+
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    document.getElementById('theme-btn').textContent = isLight ? '☀️' : '🌙';
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+
+function applyTheme() {
+    if(localStorage.getItem('theme') === 'light') { document.body.classList.add('light'); document.getElementById('theme-btn').textContent = '☀️'; }
+}
+
+function selectSection(sec) {
+    curSec = sec;
+    localStorage.setItem('cur_sec', sec);
+    attData = JSON.parse(localStorage.getItem(SECTIONS[sec].key) || '{}');
+    document.getElementById('section-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('sec-label').innerText = SECTIONS[sec].label;
+    document.getElementById('date-picker').value = new Date().toISOString().split('T')[0];
+    const filter = document.getElementById('sub-filter');
+    filter.innerHTML = '';
+    Object.keys(SECTIONS[sec].subjects).forEach(k => {
+        const o = document.createElement('option'); o.value = k; o.innerText = SECTIONS[sec].subjects[k].name;
+        filter.appendChild(o);
+    });
+    switchTab('overview', document.querySelectorAll('.nav-item')[0]);
+}
+
+function changeSection() {
+    document.getElementById('section-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+}
+
+function isHoliday(ds) {
+    const d = new Date(ds+'T00:00:00'), day = d.getDay();
+    return day===0 || day===6 || HOLIDAYS.includes(ds);
+}
+
+function switchTab(id, el) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('tab-'+id).classList.add('active');
+    el.classList.add('active');
+    if(id==='overview') renderOverview();
+    if(id==='skip') renderSkipCalc();
+    if(id==='subjects') renderSubjectLogs();
+}
+
+function loadDay() {
+    const date = document.getElementById('date-picker').value;
+    const ui = document.getElementById('day-ui'), msg = document.getElementById('holiday-msg');
+    const list = document.getElementById('period-list');
+    list.innerHTML = '';
+    if(isHoliday(date)) { ui.style.display='none'; msg.style.display='block'; document.getElementById('holiday-msg-text').innerText='Holiday or Weekend!'; return; }
+    ui.style.display='block'; msg.style.display='none';
+    const periods = SECTIONS[curSec].tt[new Date(date+'T00:00:00').getDay()];
+    periods.forEach((p, idx) => {
+        const state = (attData[date] || {})[idx];
+        const div = document.createElement('div');
+        div.className = 'period-item';
+        div.innerHTML = `<div class="period-info"><div class="period-name">${SECTIONS[curSec].subjects[p.s].name}</div><div class="period-pts">${p.p} class(es)</div></div>
+        <div class="tog-grp" data-idx="${idx}"><button class="tog-btn p ${state===true?'active':''}" onclick="setTog(this)">P</button>
+        <button class="tog-btn a ${state===false?'active':''}" onclick="setTog(this)">A</button>
+        <button class="tog-btn r ${state===undefined?'active':''}" onclick="setTog(this)">—</button></div>`;
+        list.appendChild(div);
+    });
+}
+
+function setTog(el) { el.parentElement.querySelectorAll('.tog-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); }
+
+function markAll(val) {
+    document.querySelectorAll('.tog-grp').forEach(g => {
+        g.querySelectorAll('.tog-btn').forEach(b => b.classList.remove('active'));
+        g.querySelector('.'+val).classList.add('active');
+    });
+}
+
+function saveAtt() {
+    const date = document.getElementById('date-picker').value, dayData = {};
+    document.querySelectorAll('.tog-grp').forEach(g => {
+        if(g.querySelector('.p').classList.contains('active')) dayData[g.dataset.idx]=true;
+        else if(g.querySelector('.a').classList.contains('active')) dayData[g.dataset.idx]=false;
+    });
+    attData[date]=dayData;
+    localStorage.setItem(SECTIONS[curSec].key, JSON.stringify(attData));
+    alert('Attendance Saved!'); renderOverview();
+}
+
+function calcStats() {
+    const stats = {}; Object.keys(SECTIONS[curSec].subjects).forEach(k => stats[k]={attended:0,held:0});
+    Object.keys(attData).forEach(date => {
+        const sched = SECTIONS[curSec].tt[new Date(date+'T00:00:00').getDay()];
+        if(!sched) return;
+        Object.keys(attData[date]).forEach(pi => {
+            const p = sched[pi]; stats[p.s].held += p.p;
+            if(attData[date][pi]) stats[p.s].attended += p.p;
+        });
+    });
+    return stats;
+}
+
+function renderOverview() {
+    const stats = calcStats(), subs = SECTIONS[curSec].subjects;
+    let gA=0, gH=0; Object.keys(subs).forEach(k => { gA+=stats[k].attended; gH+=stats[k].held; });
+    const ovPerc = gH>0 ? Math.round(gA/gH*100) : 0;
+    document.getElementById('stat-grid').innerHTML = `<div class="stat-card"><span class="stat-label">Goal (Total)</span><span class="stat-val">525</span></div>
+    <div class="stat-card"><span class="stat-label">Overall %</span><span class="stat-val" style="color:${ovPerc>=75?'var(--success)':'var(--danger)'}">${ovPerc}%</span></div>
+    <div class="stat-card"><span class="stat-label">Held</span><span class="stat-val">${gH}</span></div><div class="stat-card"><span class="stat-label">Attended</span><span class="stat-val">${gA}</span></div>`;
+    const cont = document.getElementById('subject-cards-container'); cont.innerHTML = '';
+    Object.keys(subs).forEach(k => {
+        const s = stats[k], perc = s.held>0 ? Math.round(s.attended/s.held*100) : 0;
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `<div class="subj-hdr"><div><div class="subj-name">${subs[k].name}</div><div class="subj-meta">Held: ${s.held} | Attended: ${s.attended} | Total: ${subs[k].total}</div></div>
+        <span class="tag ${subs[k].type==='Theory'?'tag-theory':'tag-lab'}">${subs[k].type}</span></div>
+        <div class="prog-wrap"><div class="prog-bar" style="width:${perc}%;background:${perc>=75?'var(--success)':'var(--danger)'}"></div></div>
+        <div class="subj-footer"><span style="color:${perc>=75?'var(--success)':'var(--danger)'};font-weight:700">${perc}%</span>
+        <span style="color:var(--dim)">${subs[k].req75?'Need 75%':'N/A'}</span></div>`;
+        cont.appendChild(card);
+    });
+}
+
+function renderSkipCalc() {
+    const stats = calcStats(), subs = SECTIONS[curSec].subjects, cont = document.getElementById('skip-container');
+    cont.innerHTML = '<h2 style="font-size:1.05rem;margin-bottom:14px;">Safety Calculator</h2>';
+    Object.keys(subs).forEach(k => {
+        if(!subs[k].req75) return;
+        const s = stats[k], rem = subs[k].total-s.held, req = Math.ceil(0.75*subs[k].total);
+        const canMiss = Math.max(0,(s.attended+rem)-req), needMore = Math.max(0,req-s.attended);
+        const alertHtml = (s.attended+rem < req) ? `<div class="alert-box alert-danger">Cannot reach 75%</div>` : (canMiss>0 ? `<div class="alert-box alert-safe">Can skip ${canMiss} more</div>` : `<div class="alert-box alert-danger">Need ${needMore} more</div>`);
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `<div class="subj-name">${subs[k].name}</div><div class="calc-row"><span>Required:</span><span class="calc-val">${req} / ${subs[k].total}</span></div>${alertHtml}`;
+        cont.appendChild(card);
+    });
+}
+
+function renderSubjectLogs() {
+    const subKey = document.getElementById('sub-filter').value, body = document.getElementById('log-body');
+    body.innerHTML = '';
+    Object.keys(attData).sort().reverse().forEach(date => {
+        const sched = SECTIONS[curSec].tt[new Date(date+'T00:00:00').getDay()];
+        if(!sched) return;
+        sched.forEach((p, idx) => {
+            if(p.s===subKey && attData[date][idx]!==undefined) {
+                const status = attData[date][idx], row = document.createElement('tr');
+                row.innerHTML = `<td>${date}</td><td>${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(date+'T00:00:00').getDay()]}</td><td>${p.p}</td><td style="color:${status?'var(--green)':'var(--danger)'}">${status?'P':'A'}</td>`;
+                body.appendChild(row);
+            }
+        });
+    });
+}
+
+window.onload = () => { applyTheme(); const s = localStorage.getItem('cur_sec'); if(s) selectSection(s); };
+</script>
+</body>
+</html>
