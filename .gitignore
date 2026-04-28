@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Package manager lock files are tracked
+# package-lock.json should be committed
+
+# Build outputs (if any in future)
+dist/
+build/
+.next/
+.turbo/
+out/
+
+# Cache directories
+.cache/
+.vercel/
+.parcel-cache/
+
+# Build info
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
