@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+accsoft-poc/login-response.html
+accsoft-poc/attendance.html
+accsoft-poc/attendance-summary.json
+accsoft-poc/attendance-logs.json
+accsoft-poc/.env
+.DS_Store

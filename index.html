@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AttendEase</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Load Supabase Client library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Load dynamic frontend configurations -->
+    <script src="config.js"></script>
+</head>
+
+<body>
+
+    <!-- ONBOARDING & AUTH VIEW -->
+    <div id="ob" class="onboard">
+        <div class="ob-top">
+            <div class="ob-logo">Attend<span>Ease</span></div>
+            <div class="ob-tagline">Track Smarter. Stay Ahead.</div>
+        </div>
+        
+        <div class="ob-body" id="authScreens">
+            <!-- 1. Welcome Screen -->
+            <div id="welcomeScreen" class="auth-section">
+                <div class="ob-illust" style="text-align: center; margin: 32px 0 24px;">
+                    <div style="font-size: 5rem; margin-bottom: 12px;">🎓</div>
+                    <div style="font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px;">Your attendance. Synced.</div>
+                    <div style="font-size: 0.8rem; color: var(--text2); margin-top: 8px; line-height: 1.5; padding: 0 16px;">
+                        Connect your AccSoft account and get real-time attendance insights.
+                    </div>
+                </div>
+                <button class="btn btn-or" onclick="showAuthTab('signup')" style="margin-bottom: 12px;">Sign Up</button>
+                <button class="btn btn-ghost" onclick="showAuthTab('login')">Log In</button>
+                <div style="text-align: center; margin-top: 36px; font-size: 0.72rem; color: var(--text3); font-weight: 600;">
+                    🛡️ Secure. Private. Trusted.
+                </div>
+            </div>
+
+            <!-- 2. Sign Up Screen -->
+            <div id="signupScreen" class="auth-section" style="display:none">
+                <div class="ob-head" style="display:flex; align-items:center; gap: 8px; margin-bottom: 16px;">
+                    <button class="back-arrow" onclick="showAuthTab('welcome')">←</button>
+                    <div>
+                        <div class="auth-title">Create Account</div>
+                        <div class="auth-sub">Register to get started</div>
+                    </div>
+                </div>
+                
+                <div class="fl">Full Name</div>
+                <input type="text" class="dinput" id="signUpName" placeholder="Enter your name">
+                
+                <div class="fl">Email Address</div>
+                <input type="email" class="dinput" id="signUpEmail" placeholder="Enter your email">
+                
+                <div class="fl">Password</div>
+                <input type="password" class="dinput" id="signUpPass" placeholder="Enter password">
+                
+                <button class="btn btn-or" onclick="handleSignUp()" style="margin-top: 8px; margin-bottom: 16px;">Sign Up</button>
+                
+                <div style="text-align: center; font-size: 0.8rem; color: var(--text2);">
+                    Already have an account? <a href="#" onclick="showAuthTab('login')" style="color: var(--or); font-weight: 700; text-decoration: none;">Log In</a>
+                </div>
+            </div>
+
+            <!-- 3. Log In Screen -->
+            <div id="loginScreen" class="auth-section" style="display:none">
+                <div class="ob-head" style="display:flex; align-items:center; gap: 8px; margin-bottom: 16px;">
+                    <button class="back-arrow" onclick="showAuthTab('welcome')">←</button>
+                    <div>
+                        <div class="auth-title">Welcome Back</div>
+                        <div class="auth-sub">Log in to continue</div>
+                    </div>
+                </div>
+                
+                <div class="fl">Email Address</div>
+                <input type="email" class="dinput" id="loginEmail" placeholder="Enter your email">
+                
+                <div class="fl">Password</div>
+                <input type="password" class="dinput" id="loginPass" placeholder="Enter password">
+                
+                <button class="btn btn-or" onclick="handleLogin()" style="margin-top: 8px; margin-bottom: 16px;">Log In</button>
+                
+                <div style="text-align: center; font-size: 0.8rem; color: var(--text2);">
+                    Don't have an account? <a href="#" onclick="showAuthTab('signup')" style="color: var(--or); font-weight: 700; text-decoration: none;">Sign Up</a>
+                </div>
+            </div>
+
+            <!-- 4. Connect AccSoft Screen -->
+            <div id="connectScreen" class="auth-section" style="display:none">
+                <div class="ob-head" style="display:flex; align-items:center; gap: 8px; margin-bottom: 16px;">
+                    <button class="back-arrow" onclick="handleSignOut()">←</button>
+                    <div>
+                        <div class="auth-title">Connect AccSoft</div>
+                        <div class="auth-sub">Enter your AccSoft credentials</div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: 16px; background: var(--blue-dim); border-color: rgba(61,142,255,.2); display: flex; align-items: center; gap: 12px; padding: 14px;">
+                    <div style="font-size: 1.5rem;">🛡️</div>
+                    <div style="font-size: 0.72rem; color: var(--text2); line-height: 1.4;">
+                        Your data is encrypted and 100% secure. We never store your password in plain text.
+                    </div>
+                </div>
+                
+                <div class="fl">Enrollment Number / Login name</div>
+                <input type="text" class="dinput" id="accsoftEnroll" placeholder="Enter enrollment number">
+                
+                <div class="fl">AccSoft Password</div>
+                <input type="password" class="dinput" id="accsoftPass" placeholder="Enter AccSoft password">
+                
+                <button class="btn btn-or" onclick="handleConnectAccsoft()" style="margin-top: 8px; margin-bottom: 16px;">Connect Account</button>
+                
+                <div style="text-align: center; font-size: 0.72rem; color: var(--text3); font-weight: 600;">
+                    🔒 We never store your password. It is encrypted and secured.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app" style="display:none">
+        
+        <!-- Header Section -->
+        <div class="header">
+            <div class="hinner" style="padding-bottom: 8px;">
+                <div>
+                    <div class="hlogo">Attend<em>Ease</em></div>
+                    <div class="hwelcome" id="headerWelcome" style="font-size: .8rem; color: var(--text2); margin-top: 2px;">Hello, Student 👋</div>
+                </div>
+                <div class="hright">
+                    <button class="hbtn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+                </div>
+            </div>
+            
+            <!-- Connection Status Strip -->
+            <div class="sec-strip" style="display:flex; align-items:center; justify-content:space-between; padding-top:4px;">
+                <div class="sec-pill" style="background: var(--blue-dim); border-color: rgba(61,142,255,.25);">
+                    <span class="sec-dot" style="background: var(--blue);" id="syncStatusDot"></span>
+                    <span class="sec-pill-txt" style="color: var(--blue);" id="syncStatusLbl">Last Synced: --</span>
+                </div>
+                <button class="chg-btn" style="background: var(--or-glow); border-color: rgba(255,87,34,.3); color: var(--or);" onclick="triggerSyncNow()" id="syncBtn">🔄 Sync Now</button>
+            </div>
+        </div>
+
+        <div class="page">
+            
+            <!-- 1. DASHBOARD VIEW (HOME) -->
+            <div id="v-overview" class="view act">
+                <!-- Fallback / Empty state -->
+                <div id="dashboardFallback" class="card" style="text-align: center; padding: 32px 16px; display: none;">
+                    <div style="font-size: 3rem; margin-bottom: 12px;">📊</div>
+                    <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 8px;" id="dashboardFallbackTitle">Connect AccSoft to get started</h3>
+                    <p style="font-size: 0.76rem; color: var(--text2); margin-bottom: 18px; line-height: 1.5;" id="dashboardFallbackSub">Sync your attendance to view statistics, analytics, and subject-wise logs.</p>
+                    <button class="btn btn-or" style="max-width: 200px; margin: 0 auto;" onclick="triggerSyncNow()" id="dashboardFallbackBtn">Sync Now</button>
+                </div>
+
+                <!-- Live stats container -->
+                <div id="dashboardStats" style="display: none;">
+                    <!-- Overall Attendance Hero Card -->
+                    <div class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px;">
+                        <div>
+                            <div class="ctitle" style="margin-bottom: 6px;">Overall Attendance</div>
+                            <div class="overall-perc" id="dashOverallPerc" style="font-size: 2.2rem; font-weight: 900; color: var(--green);">0.00%</div>
+                            <div class="overall-status" id="dashOverallStatus" style="font-size: 0.76rem; color: var(--text2); font-weight: 500; margin-top: 4px;">--</div>
+                        </div>
+                        <!-- Simple visual ring representation -->
+                        <div class="overall-ring-container" style="width: 80px; height: 80px; position: relative;">
+                            <svg width="80" height="80" viewBox="0 0 80 80">
+                                <circle cx="40" cy="40" r="32" stroke="var(--bg4)" stroke-width="6" fill="transparent" />
+                                <circle cx="40" cy="40" r="32" stroke="var(--green)" stroke-width="6" fill="transparent" 
+                                        stroke-dasharray="201.06" stroke-dashoffset="201.06" id="dashOverallSvgRing"
+                                        stroke-linecap="round" transform="rotate(-90 40 40)" />
+                            </svg>
+                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800;" id="dashOverallSvgLabel">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Row Cards -->
+                    <div class="stats-grid" id="statsG">
+                        <div class="sbox">
+                            <div class="snum" id="dashClassesHeld">0</div>
+                            <div class="slbl">Classes Held</div>
+                        </div>
+                        <div class="sbox">
+                            <div class="snum" style="color: var(--blue);" id="dashClassesPresent">0</div>
+                            <div class="slbl">Attended</div>
+                        </div>
+                        <div class="sbox" style="grid-column: span 2;">
+                            <div class="snum" style="color: var(--red);" id="dashClassesAbsent">0</div>
+                            <div class="slbl">Missed / Absent</div>
+                        </div>
+                    </div>
+
+                    <!-- Subject Overview List -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; margin-top: 8px;">
+                        <div class="ctitle" style="margin-bottom:0;">Subject Overview</div>
+                        <a href="#" style="font-size: 0.72rem; color: var(--or); font-weight: 700; text-decoration:none;" onclick="go('subjects', document.querySelectorAll('.ntab')[1])">View All</a>
+                    </div>
+                    
+                    <div id="dashSubjectList"></div>
+                </div>
+            </div>
+
+            <!-- 2. SUBJECTS LIST VIEW -->
+            <div id="v-subjects" class="view">
+                <div class="ctitle" style="margin-bottom: 12px;">Subject Analytics</div>
+                <div id="subjectsListFallback" class="card" style="text-align:center; padding: 24px 16px; color: var(--text3); font-size: 0.8rem;">
+                    Sync attendance data to view subject list.
+                </div>
+                <div id="subjC"></div>
+            </div>
+
+            <!-- 3. ATTENDANCE HISTORY LOGS -->
+            <div id="v-history" class="view">
+                <div class="ctitle" style="margin-bottom: 12px;">Attendance History</div>
+                
+                <!-- Filters panel -->
+                <div class="card" style="padding: 12px 14px; margin-bottom: 12px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <div class="fl" style="margin-bottom: 4px; font-size: 0.62rem;">Subject</div>
+                            <select class="csel" id="historyFilterSub" onchange="applyHistoryFilters()" style="margin-bottom:0; padding: 8px 10px; font-size:0.75rem;"></select>
+                        </div>
+                        <div>
+                            <div class="fl" style="margin-bottom: 4px; font-size: 0.62rem;">Status</div>
+                            <select class="csel" id="historyFilterStatus" onchange="applyHistoryFilters()" style="margin-bottom:0; padding: 8px 10px; font-size:0.75rem;">
+                                <option value="all">All</option>
+                                <option value="P">Present (P)</option>
+                                <option value="A">Absent (A)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="historyFallback" class="card" style="text-align:center; padding: 24px 16px; color: var(--text3); font-size: 0.8rem;">
+                    Sync attendance data to view history logs.
+                </div>
+
+                <div id="historyLogsContainer"></div>
+            </div>
+
+            <!-- 4. INSIGHTS VIEW -->
+            <div id="v-insights" class="view">
+                <div class="ctitle" style="margin-bottom: 12px;">Attendance Insights</div>
+                
+                <div id="insightsFallback" class="card" style="text-align:center; padding: 24px 16px; color: var(--text3); font-size: 0.8rem; margin-bottom:12px;">
+                    Sync attendance data to view bunk details and insights.
+                </div>
+
+                <div id="insightsContainer" style="display:none">
+                    <!-- Dynamic insights cards will be appended here -->
+                </div>
+            </div>
+
+            <!-- 5. SETTINGS VIEW -->
+            <div id="v-settings" class="view">
+                <div class="ctitle" style="margin-bottom: 12px;">Settings</div>
+                
+                <!-- Accsoft Connection Status -->
+                <div class="card" style="margin-bottom: 14px;">
+                    <div class="ctitle" style="margin-bottom: 10px;">AccSoft Connection</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 0.84rem; color: var(--text2);" id="settingsEnrollLbl">Enrollment: --</span>
+                        <span class="badge bt" id="settingsConnectionBadge" style="background: var(--green-dim); color: var(--green);">Connected</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text3); margin-bottom: 16px;" id="settingsLastSyncLbl">Last Synced: --</div>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <button class="btn btn-ghost" style="padding: 10px; font-size: 0.74rem;" onclick="triggerSyncNow()">🔄 Sync Now</button>
+                        <button class="btn btn-ghost" style="padding: 10px; font-size: 0.74rem;" onclick="openReconnectForm()">✏️ Reconnect</button>
+                    </div>
+                    <button class="btn btn-r" style="padding: 10px; font-size: 0.74rem; width: 100%;" onclick="handleDisconnectAccsoft()">🗑️ Disconnect Portal</button>
+                </div>
+
+                <!-- Account Settings -->
+                <div class="card" style="margin-bottom: 14px;">
+                    <div class="ctitle" style="margin-bottom: 10px;">Account</div>
+                    <div style="font-size: 0.84rem; font-weight: 700; margin-bottom: 4px;" id="settingsProfileName">--</div>
+                    <div style="font-size: 0.74rem; color: var(--text2); margin-bottom: 14px;" id="settingsProfileEmail">--</div>
+                    <button class="btn btn-ghost" style="padding: 10px; font-size: 0.74rem; width: 100%;" onclick="handleSignOut()">🚪 Log Out</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Bar -->
+        <nav class="nav">
+            <button class="ntab act" onclick="go('overview',this)"><span class="ni">📊</span>Home</button>
+            <button class="ntab" onclick="go('subjects',this)"><span class="ni">📚</span>Subjects</button>
+            <button class="ntab" onclick="go('history',this)"><span class="ni">🗓️</span>History</button>
+            <button class="ntab" onclick="go('insights',this)"><span class="ni">💡</span>Insights</button>
+            <button class="ntab" onclick="go('settings',this)"><span class="ni">⚙️</span>Settings</button>
+        </nav>
+    </div>
+
+    <!-- SYNCING MODAL -->
+    <div class="modal-bg hidden" id="syncingModal" style="z-index: 1500;">
+        <div class="modal" style="text-align: center; padding: 32px 24px; border-radius: 20px; max-width: 400px; margin: 0 auto;">
+            <div class="sync-spinner" style="font-size: 3rem; margin-bottom: 16px; display: inline-block;">🔄</div>
+            <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 8px;">Syncing your attendance...</h3>
+            <p style="font-size: .8rem; color: var(--text2); margin-bottom: 24px;">Please wait while we fetch the latest data from AccSoft.</p>
+            
+            <div style="display: inline-block; text-align: left; width: 100%; max-width: 280px; margin: 0 auto 24px;">
+                <div id="syncStepLogin" style="font-size: .82rem; margin-bottom: 8px; color: var(--text3); font-weight: 600;">⏳ Log in to AccSoft</div>
+                <div id="syncStepFetch" style="font-size: .82rem; margin-bottom: 8px; color: var(--text3); font-weight: 600;">⏳ Fetching attendance data</div>
+                <div id="syncStepSave" style="font-size: .82rem; color: var(--text3); font-weight: 600;">⏳ Saving to database</div>
+            </div>
+            
+            <div style="height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; margin-bottom: 12px;">
+                <div id="syncProgressBar" style="width: 0%; height: 100%; background: var(--or); transition: width .3s;"></div>
+            </div>
+            <div id="syncProgressText" style="font-size: .75rem; color: var(--text3); font-weight: 700;">0 / 3</div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "accsoft-poc",
+  "version": "1.0.0",
+  "description": "Proof of Concept for programmatically logging into LNCT Accsoft and fetching student attendance page",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "axios-cookiejar-support": "^5.0.1",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.4.5",
+    "tough-cookie": "^4.1.4"
+  }
+}
