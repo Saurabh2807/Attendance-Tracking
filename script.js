@@ -16,37 +16,71 @@ window.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('themeBtn').textContent = '☀️';
     }
 
-    // Verify Supabase Config is present
+    // Try loading from config.js or localStorage
+    const savedUrl = localStorage.getItem('ae_supabase_url');
+    const savedKey = localStorage.getItem('ae_supabase_anon_key');
+
+    if (savedUrl && (!window.SUPABASE_URL || window.SUPABASE_URL === "")) {
+        window.SUPABASE_URL = savedUrl;
+    }
+    if (savedKey && (!window.SUPABASE_ANON_KEY || window.SUPABASE_ANON_KEY === "")) {
+        window.SUPABASE_ANON_KEY = savedKey;
+    }
+
+    // If both are missing, guide user to config screen
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-        toast("⚠️ Supabase config.js parameters missing!");
+        console.warn("Supabase configuration details missing. Opening setup screen.");
         showWelcomeScreen();
+        showAuthTab('config');
         return;
     }
 
-    // Initialize Supabase
-    supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-
-    // Set up auth listener
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-        console.log("Auth State Changed:", event, session);
-        currentUser = session ? session.user : null;
-        
-        if (currentUser) {
-            // User logged in
-            await checkConnectionAndLoadData();
-        } else {
-            // User logged out
-            showWelcomeScreen();
-        }
-    });
+    initializeSupabase();
 });
+
+function initializeSupabase() {
+    try {
+        supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        
+        // Populate inputs in config screen in case they want to view/edit them
+        const urlInput = document.getElementById('dbSupabaseUrl');
+        const keyInput = document.getElementById('dbSupabaseKey');
+        if (urlInput) urlInput.value = window.SUPABASE_URL;
+        if (keyInput) keyInput.value = window.SUPABASE_ANON_KEY;
+
+        // Set up auth listener
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            console.log("Auth State Changed:", event, session);
+            currentUser = session ? session.user : null;
+            
+            if (currentUser) {
+                // User logged in
+                await checkConnectionAndLoadData();
+            } else {
+                // User logged out
+                showWelcomeScreen();
+            }
+        });
+    } catch (err) {
+        console.error("Supabase initialization error:", err);
+        toast("❌ Failed to initialize Supabase. Check config settings.");
+        showWelcomeScreen();
+        showAuthTab('config');
+    }
+}
 
 // ===== AUTHENTICATION LIFE CYCLE =====
 function showWelcomeScreen() {
     document.getElementById('ob').style.display = 'flex';
     document.getElementById('ob').style.flexDirection = 'column';
     document.getElementById('app').style.display = 'none';
-    showAuthTab('welcome');
+    
+    // Check if configuration exists
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+        showAuthTab('config');
+    } else {
+        showAuthTab('welcome');
+    }
 }
 
 function showAuthTab(tab) {
@@ -59,6 +93,46 @@ function showAuthTab(tab) {
         document.getElementById('signupScreen').style.display = 'block';
     } else if (tab === 'connect') {
         document.getElementById('connectScreen').style.display = 'block';
+    } else if (tab === 'config') {
+        document.getElementById('configScreen').style.display = 'block';
+    }
+}
+
+function handleConfigBack() {
+    if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY && supabaseClient) {
+        showAuthTab('welcome');
+    } else {
+        toast("⚠️ Please save valid configuration details first.");
+    }
+}
+
+async function handleSaveConfig() {
+    const url = document.getElementById('dbSupabaseUrl').value.trim();
+    const key = document.getElementById('dbSupabaseKey').value.trim();
+
+    if (!url || !key) {
+        toast("❌ Please fill in both fields");
+        return;
+    }
+
+    try {
+        new URL(url);
+    } catch (e) {
+        toast("❌ Please enter a valid URL");
+        return;
+    }
+
+    localStorage.setItem('ae_supabase_url', url);
+    localStorage.setItem('ae_supabase_anon_key', key);
+    window.SUPABASE_URL = url;
+    window.SUPABASE_ANON_KEY = key;
+
+    toast("⏳ Initializing Supabase client...");
+    initializeSupabase();
+
+    if (supabaseClient) {
+        toast("✅ Supabase configured and connected!");
+        showAuthTab('welcome');
     }
 }
 
