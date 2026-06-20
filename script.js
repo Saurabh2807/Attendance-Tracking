@@ -1,3 +1,13 @@
+// ===== DIAGNOSTICS & GLOBAL ERROR CATCHING =====
+window.addEventListener('error', (e) => {
+    toast(`🚨 JS Error: ${e.message} at ${e.filename}:${e.lineno}`);
+    console.error("Caught JS Error:", e);
+});
+window.addEventListener('unhandledrejection', (e) => {
+    toast(`🚨 Promise Rejection: ${e.reason}`);
+    console.error("Caught Promise Rejection:", e.reason);
+});
+
 // ===== CONSTANTS & GLOBAL STATE =====
 let supabaseClient = null;
 let currentUser = null;
