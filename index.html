@@ -24,32 +24,6 @@
         </div>
         
         <div class="ob-body" id="authScreens">
-            <!-- 0. Supabase Config Screen -->
-            <div id="configScreen" class="auth-section" style="display:none">
-                <div class="ob-head" style="display:flex; align-items:center; gap: 8px; margin-bottom: 16px;">
-                    <button class="back-arrow" id="configBackBtn" onclick="handleConfigBack()">←</button>
-                    <div>
-                        <div class="auth-title">Supabase Configuration</div>
-                        <div class="auth-sub">Setup database credentials</div>
-                    </div>
-                </div>
-                
-                <div class="card" style="margin-bottom: 16px; background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); display: flex; align-items: center; gap: 12px; padding: 14px;">
-                    <div style="font-size: 1.5rem;">⚙️</div>
-                    <div style="font-size: 0.72rem; color: var(--text2); line-height: 1.4;">
-                        Provide your Supabase URL and Anon Public Key. They will be saved in your browser's local storage.
-                    </div>
-                </div>
-                
-                <div class="fl">Supabase URL</div>
-                <input type="url" class="dinput" id="dbSupabaseUrl" placeholder="https://xxxxxx.supabase.co">
-                
-                <div class="fl">Supabase Anon Key</div>
-                <input type="text" class="dinput" id="dbSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
-                
-                <button class="btn btn-or" onclick="handleSaveConfig()" style="margin-top: 8px; margin-bottom: 16px;">Save & Initialize</button>
-            </div>
-
             <!-- 1. Welcome Screen -->
             <div id="welcomeScreen" class="auth-section">
                 <div class="ob-illust" style="text-align: center; margin: 32px 0 24px;">
@@ -61,9 +35,8 @@
                 </div>
                 <button class="btn btn-or" onclick="showAuthTab('signup')" style="margin-bottom: 12px;">Sign Up</button>
                 <button class="btn btn-ghost" onclick="showAuthTab('login')">Log In</button>
-                <div style="text-align: center; margin-top: 36px; font-size: 0.72rem; color: var(--text3); font-weight: 600; display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                    <span>🛡️ Secure. Private. Trusted.</span>
-                    <a href="#" onclick="showAuthTab('config')" style="color: var(--text2); font-weight: 500; text-decoration: none; font-size: 0.7rem; border-bottom: 1px dashed var(--text3); padding-bottom: 1px;">⚙️ Configure Supabase</a>
+                <div style="text-align: center; margin-top: 36px; font-size: 0.72rem; color: var(--text3); font-weight: 600;">
+                    🛡️ Secure. Private. Trusted.
                 </div>
             </div>
 
