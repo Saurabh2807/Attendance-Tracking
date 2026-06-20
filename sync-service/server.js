@@ -489,7 +489,27 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
     }
 });
 
+// Debugging & Health Check Routes
+app.get('/', (req, res) => {
+    res.json({
+        message: 'AttendEase Sync Service is running.',
+        endpoints: {
+            health: 'GET /health',
+            connectAccsoft: 'POST /connect-accsoft',
+            syncAttendance: 'POST /sync-attendance'
+        }
+    });
+});
+
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Start Express Server
 app.listen(PORT, () => {
     console.log(`AttendEase Sync Service running on port ${PORT}`);
 });
+
