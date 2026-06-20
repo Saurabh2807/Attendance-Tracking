@@ -87,3 +87,27 @@ $$ language plpgsql security definer;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- 8. Trigger function to automatically update profiles.enrollment_no when accsoft_connections is upserted
+create or replace function public.sync_enrollment_to_profile()
+returns trigger as $$
+begin
+  update public.profiles
+  set enrollment_no = new.enrollment_no
+  where id = new.user_id
+    and (enrollment_no is null or enrollment_no = '');
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace trigger on_connection_upserted
+  after insert or update of enrollment_no on public.accsoft_connections
+  for each row execute procedure public.sync_enrollment_to_profile();
+
+-- 9. Backfill existing users who have connections but empty profile enrollment numbers
+update public.profiles p
+set enrollment_no = c.enrollment_no
+from public.accsoft_connections c
+where p.id = c.user_id
+  and (p.enrollment_no is null or p.enrollment_no = '');
+
