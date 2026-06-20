@@ -28,10 +28,23 @@ const DNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', async () => {
     // Light/Dark Theme Restore
-    if (localStorage.getItem('ae_theme') === 'lm') {
+    const isLight = localStorage.getItem('ae_theme') === 'lm';
+    if (isLight) {
         document.body.classList.add('lm');
-        document.getElementById('themeBtn').textContent = '☀️';
     }
+    const checkbox = document.getElementById('themeBtn');
+    if (checkbox) checkbox.checked = isLight;
+
+    // Splash screen timer
+    setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => {
+                splash.style.visibility = 'hidden';
+            }, 500);
+        }
+    }, 1500);
 
     // Verify Supabase Config is present
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
@@ -46,6 +59,41 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
         console.error("Supabase initialization error:", err);
         toast("❌ Failed to initialize Supabase. Check config settings.");
+    }
+
+    // OTP inputs shift focus automatically
+    const otpBoxes = document.querySelectorAll('.otp-box');
+    const hiddenOtpInput = document.getElementById('otpCode');
+
+    otpBoxes.forEach((box, idx) => {
+        box.addEventListener('input', (e) => {
+            if (box.value.length === 1 && idx < otpBoxes.length - 1) {
+                otpBoxes[idx + 1].focus();
+            }
+            updateHiddenOtpValue();
+        });
+
+        box.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace') {
+                if (box.value.length === 0 && idx > 0) {
+                    otpBoxes[idx - 1].focus();
+                    otpBoxes[idx - 1].value = '';
+                } else {
+                    box.value = '';
+                }
+                updateHiddenOtpValue();
+            }
+        });
+    });
+
+    function updateHiddenOtpValue() {
+        let code = '';
+        otpBoxes.forEach(b => {
+            code += b.value;
+        });
+        if (hiddenOtpInput) {
+            hiddenOtpInput.value = code;
+        }
     }
 
     // Set up auth listener
@@ -311,12 +359,32 @@ async function handleConnectAccsoft() {
         return;
     }
 
+    const connectLoading = document.getElementById('connectLoading');
+    const connStepLogin = document.getElementById('connStepLogin');
+    const connStepFetch = document.getElementById('connStepFetch');
+    const connStepSave = document.getElementById('connStepSave');
+
+    if (connectLoading) connectLoading.style.display = 'flex';
+    if (connStepLogin) {
+        connStepLogin.className = 'loading-step active';
+        connStepLogin.querySelector('.step-indicator').innerHTML = '<div class="spin-circle"></div>';
+    }
+    if (connStepFetch) {
+        connStepFetch.className = 'loading-step';
+        connStepFetch.querySelector('.step-indicator').textContent = '⏳';
+    }
+    if (connStepSave) {
+        connStepSave.className = 'loading-step';
+        connStepSave.querySelector('.step-indicator').textContent = '⏳';
+    }
+
     toast("⏳ Connecting account (Verifying credentials)...");
     
     // Retrieve user session token
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
         toast("Session expired. Please log in again.");
+        if (connectLoading) connectLoading.style.display = 'none';
         return;
     }
 
@@ -336,6 +404,19 @@ async function handleConnectAccsoft() {
             throw new Error(resData.error || 'Connection failed');
         }
 
+        if (connStepLogin) {
+            connStepLogin.className = 'loading-step success';
+            connStepLogin.querySelector('.step-indicator').textContent = '✅';
+        }
+        if (connStepFetch) {
+            connStepFetch.className = 'loading-step success';
+            connStepFetch.querySelector('.step-indicator').textContent = '✅';
+        }
+        if (connStepSave) {
+            connStepSave.className = 'loading-step success';
+            connStepSave.querySelector('.step-indicator').textContent = '✅';
+        }
+
         toast("✅ Connected successfully!");
         
         // Refresh connection details locally and trigger automated sync
@@ -343,6 +424,11 @@ async function handleConnectAccsoft() {
         await triggerSyncNow();
 
     } catch (err) {
+        if (connStepLogin) {
+            connStepLogin.className = 'loading-step failed';
+            connStepLogin.querySelector('.step-indicator').textContent = '❌';
+        }
+        if (connectLoading) connectLoading.style.display = 'none';
         toast(`❌ ${err.message}`);
     }
 }
@@ -502,30 +588,22 @@ async function refreshData() {
 function updateSyncStatusStrip() {
     const dot = document.getElementById('syncStatusDot');
     const lbl = document.getElementById('syncStatusLbl');
-    const btn = document.getElementById('syncBtn');
 
     if (!connectionData) return;
 
     const lastSyncStr = connectionData.last_sync_at ? fmtDateTime(connectionData.last_sync_at) : 'Never';
 
-    if (connectionData.last_sync_status === 'SUCCESS') {
-        dot.style.background = 'var(--green)';
-        lbl.textContent = `Synced: ${lastSyncStr}`;
-        lbl.style.color = 'var(--green)';
-        lbl.parentElement.style.background = 'var(--green-dim)';
-        lbl.parentElement.style.borderColor = 'rgba(0, 200, 150, 0.2)';
-    } else if (connectionData.last_sync_status) {
-        dot.style.background = 'var(--red)';
-        lbl.textContent = `Sync Failed: ${connectionData.last_sync_status}`;
-        lbl.style.color = 'var(--red)';
-        lbl.parentElement.style.background = 'var(--red-dim)';
-        lbl.parentElement.style.borderColor = 'rgba(255, 69, 96, 0.2)';
-    } else {
-        dot.style.background = 'var(--yellow)';
-        lbl.textContent = 'Never Synced';
-        lbl.style.color = 'var(--yellow)';
-        lbl.parentElement.style.background = 'var(--yellow-dim)';
-        lbl.parentElement.style.borderColor = 'rgba(255, 176, 32, 0.2)';
+    if (lbl) {
+        if (connectionData.last_sync_status === 'SUCCESS') {
+            lbl.textContent = `Synced: ${lastSyncStr}`;
+            if (dot) dot.style.background = 'var(--green)';
+        } else if (connectionData.last_sync_status) {
+            lbl.textContent = `Sync Failed: ${connectionData.last_sync_status}`;
+            if (dot) dot.style.background = 'var(--red)';
+        } else {
+            lbl.textContent = 'Never Synced';
+            if (dot) dot.style.background = 'var(--orange)';
+        }
     }
 }
 
@@ -589,28 +667,36 @@ function renderDashboard() {
     const ringOffset = 201.06 - (201.06 * Math.min(overallPerc, 100) / 100);
 
     // Overall Ring Card Updates
-    document.getElementById('dashOverallPerc').textContent = `${overallPerc.toFixed(2)}%`;
+    document.getElementById('dashOverallPerc').textContent = `${overallPerc.toFixed(1)}%`;
     const ring = document.getElementById('dashOverallSvgRing');
     ring.setAttribute('stroke-dashoffset', ringOffset);
     
     // Color code ring and text
-    const ringCol = overallPerc >= 75 ? 'var(--green)' : overallPerc >= 65 ? 'var(--yellow)' : 'var(--red)';
+    const ringCol = overallPerc >= 75 ? 'var(--green)' : overallPerc >= 65 ? 'var(--orange)' : 'var(--red)';
     ring.setAttribute('stroke', ringCol);
     document.getElementById('dashOverallPerc').style.color = ringCol;
-    document.getElementById('dashOverallSvgLabel').textContent = `${Math.round(overallPerc)}%`;
-    document.getElementById('dashOverallSvgLabel').style.color = ringCol;
+    
+    const label = document.getElementById('dashOverallSvgLabel');
+    if (label) {
+        label.textContent = `${Math.round(overallPerc)}%`;
+        label.style.color = ringCol;
+    }
 
     // Set feedback label
     const feedbackLbl = document.getElementById('dashOverallStatus');
+    const helpText = document.getElementById('dashOverallHelpText');
     if (overallPerc >= 75) {
-        feedbackLbl.textContent = "You're doing great! Keep it up.";
-        feedbackLbl.style.color = 'var(--green)';
+        feedbackLbl.textContent = "Safe Zone";
+        feedbackLbl.className = "hero-badge safe";
+        if (helpText) helpText.textContent = "Great job! Keep it up.";
     } else if (overallPerc >= 65) {
-        feedbackLbl.textContent = "Borderline. Try not to miss classes.";
-        feedbackLbl.style.color = 'var(--yellow)';
+        feedbackLbl.textContent = "Warning Zone";
+        feedbackLbl.className = "hero-badge warning";
+        if (helpText) helpText.textContent = "Need 75% to stay safe";
     } else {
-        feedbackLbl.textContent = "Low attendance. Bunks not allowed!";
-        feedbackLbl.style.color = 'var(--red)';
+        feedbackLbl.textContent = "Critical Zone";
+        feedbackLbl.className = "hero-badge critical";
+        if (helpText) helpText.textContent = "Bunks not allowed! Missed too many.";
     }
 
     // Held stats fields
@@ -618,21 +704,92 @@ function renderDashboard() {
     document.getElementById('dashClassesPresent').textContent = totalPresent;
     document.getElementById('dashClassesAbsent').textContent = totalAbsent;
 
+    // Render Dynamic Insights Preview (top 2 insights)
+    const insightsPreview = document.getElementById('dashInsightsPreviewList');
+    if (insightsPreview) {
+        insightsPreview.innerHTML = '';
+        const insightsList = [];
+
+        if (overallPerc >= 75) {
+            insightsList.push({
+                type: 'good',
+                tag: 'Bunk Prediction',
+                title: 'You are in Safe Zone',
+                sub: 'Great! Keep it up.',
+                icon: '🎯'
+            });
+        } else {
+            const mustAttendOverall = Math.ceil((0.75 * totalHeld - totalPresent) / 0.25);
+            if (mustAttendOverall > 0) {
+                insightsList.push({
+                    type: 'critical',
+                    tag: 'Attendance Goal',
+                    title: `Must attend ${mustAttendOverall} classes`,
+                    sub: 'To reach 75% overall attendance',
+                    icon: '⚠️'
+                });
+            }
+        }
+
+        // Lowest subject check
+        let lowestSub = null;
+        let lowestPerc = 101;
+        summaryData.forEach(s => {
+            if (s.held > 0 && s.percentage < lowestPerc) {
+                lowestPerc = s.percentage;
+                lowestSub = s;
+            }
+        });
+
+        if (lowestSub) {
+            insightsList.push({
+                type: lowestPerc >= 75 ? 'good' : lowestPerc >= 65 ? 'warning' : 'critical',
+                tag: 'Recommendation',
+                title: `${lowestSub.subject_name}`,
+                sub: `Has your lowest attendance (${lowestPerc.toFixed(1)}%). Try to improve!`,
+                icon: '📈'
+            });
+        }
+
+        insightsList.slice(0, 2).forEach(ins => {
+            const card = document.createElement('div');
+            card.className = `insight-card`;
+            card.style.borderColor = ins.type === 'good' ? 'rgba(46, 204, 113, 0.2)' : ins.type === 'warning' ? 'rgba(230, 126, 34, 0.2)' : 'rgba(231, 76, 60, 0.2)';
+            card.style.background = ins.type === 'good' ? 'var(--green-dim)' : ins.type === 'warning' ? 'var(--orange-dim)' : 'var(--red-dim)';
+            card.onclick = () => go('insights', document.querySelectorAll('.ntab')[3]);
+            card.innerHTML = `
+                <div class="insight-left">
+                    <span class="insight-tag" style="color: var(--${ins.type === 'good' ? 'green' : ins.type === 'warning' ? 'orange' : 'red'});">${ins.tag}</span>
+                    <span class="insight-title" style="color: var(--${ins.type === 'good' ? 'green' : ins.type === 'warning' ? 'orange' : 'red'});">${ins.title}</span>
+                    <span class="insight-sub">${ins.sub}</span>
+                </div>
+                <div class="insight-right">${ins.icon}</div>
+            `;
+            insightsPreview.appendChild(card);
+        });
+    }
+
     // Render Quick Subject Overview
     subjList.innerHTML = '';
     summaryData.slice(0, 3).forEach(s => {
-        const percCol = s.percentage >= 75 ? 'var(--green)' : s.percentage >= 65 ? 'var(--yellow)' : 'var(--red)';
+        const percCol = s.percentage >= 75 ? 'var(--green)' : s.percentage >= 65 ? 'var(--orange)' : 'var(--red)';
         const row = document.createElement('div');
-        row.className = 'subj-card';
-        row.style.padding = '12px 14px';
-        row.style.marginBottom = '8px';
+        row.className = 'subj-row';
+        row.onclick = () => showSubjectDetail(s.subject_name);
         row.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-                <span style="font-size: 0.8rem; font-weight:700; max-width: 70%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.subject_name}</span>
-                <span style="color: ${percCol}; font-weight:800; font-size: 0.82rem;">${s.percentage.toFixed(1)}%</span>
+            <div class="subj-row-top">
+                <div class="subj-row-info">
+                    <div class="subj-row-icon">📚</div>
+                    <div class="subj-row-details">
+                        <div class="subj-row-name">${s.subject_name}</div>
+                        <div class="subj-row-stats">Attended <span class="pres">${s.present}</span>/${s.held}</div>
+                    </div>
+                </div>
+                <div class="subj-row-perc" style="color: ${percCol};">${s.percentage.toFixed(1)}%</div>
+                <div class="subj-row-arrow">></div>
             </div>
-            <div class="prog" style="height: 4px; margin: 0;">
-                <div class="prog-fill" style="width: ${s.percentage}%; background: ${percCol};"></div>
+            <div class="subj-row-progress">
+                <div class="subj-row-fill" style="width: ${s.percentage}%; background: ${percCol};"></div>
             </div>
         `;
         subjList.appendChild(row);
@@ -653,23 +810,24 @@ function renderSubjects() {
     fallback.style.display = 'none';
 
     summaryData.forEach(s => {
-        const color = s.percentage >= 75 ? 'var(--green)' : s.percentage >= 65 ? 'var(--yellow)' : 'var(--red)';
+        const percCol = s.percentage >= 75 ? 'var(--green)' : s.percentage >= 65 ? 'var(--orange)' : 'var(--red)';
         const card = document.createElement('div');
-        card.className = 'subj-card';
+        card.className = 'subj-row';
+        card.onclick = () => showSubjectDetail(s.subject_name);
         card.innerHTML = `
-            <div class="subj-top">
-                <div>
-                    <div class="subj-name">${s.subject_name}</div>
-                    <div class="subj-meta">${s.present}/${s.held} attended • ${s.absent} missed</div>
+            <div class="subj-row-top">
+                <div class="subj-row-info">
+                    <div class="subj-row-icon">📚</div>
+                    <div class="subj-row-details">
+                        <div class="subj-row-name">${s.subject_name}</div>
+                        <div class="subj-row-stats">Held: <span>${s.held}</span> • Attended: <span class="pres">${s.present}</span> • Missed: <span class="abs">${s.absent}</span></div>
+                    </div>
                 </div>
-                <span class="badge bm">${s.percentage >= 75 ? 'Safe' : s.percentage >= 65 ? 'Warning' : 'Critical'}</span>
+                <div class="subj-row-perc" style="color: ${percCol};">${s.percentage.toFixed(1)}%</div>
+                <div class="subj-row-arrow">></div>
             </div>
-            <div class="prog">
-                <div class="prog-fill" style="width: ${s.percentage}%; background: ${color}"></div>
-            </div>
-            <div class="subj-foot">
-                <span style="color: ${color}; font-weight: 700;">${s.percentage.toFixed(2)}%</span>
-                <span style="color: var(--text3)">Target: 75% (${Math.ceil(s.held * 0.75)} present)</span>
+            <div class="subj-row-progress">
+                <div class="subj-row-fill" style="width: ${s.percentage}%; background: ${percCol};"></div>
             </div>
         `;
         container.appendChild(card);
@@ -704,6 +862,7 @@ function applyHistoryFilters() {
 function renderHistory() {
     const container = document.getElementById('historyLogsContainer');
     const fallback = document.getElementById('historyFallback');
+    if (!container || !fallback) return;
     
     container.innerHTML = '';
 
@@ -725,7 +884,7 @@ function renderHistory() {
     });
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding: 24px; color: var(--text3); font-size:0.8rem;">No records matching filters</div>';
+        container.innerHTML = '<div style="text-align:center; padding: 24px; color: var(--text-sec); font-size:0.8rem;">No records matching filters</div>';
         return;
     }
 
@@ -773,49 +932,40 @@ function renderHistory() {
 function renderInsights() {
     const fallback = document.getElementById('insightsFallback');
     const container = document.getElementById('insightsContainer');
+    if (!container) return;
 
     container.innerHTML = '';
 
     if (summaryData.length === 0) {
-        fallback.style.display = 'block';
+        if (fallback) fallback.style.display = 'block';
         container.style.display = 'none';
         return;
     }
 
-    fallback.style.display = 'none';
-    container.style.display = 'block';
-
-    let lowestSub = null;
-    let lowestPerc = 101;
+    if (fallback) fallback.style.display = 'none';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.gap = '12px';
 
     summaryData.forEach(s => {
         if (s.held === 0) return;
-
-        // Check lowest subject
-        if (s.percentage < lowestPerc) {
-            lowestPerc = s.percentage;
-            lowestSub = s;
-        }
-
-        const req = Math.ceil(0.75 * s.held);
 
         if (s.percentage >= 75) {
             // Calculate safe bunks
             const safeBunk = Math.floor((s.present - 0.75 * s.held) / 0.75);
             if (safeBunk > 0) {
                 const card = document.createElement('div');
-                card.className = 'card';
-                card.style.borderColor = 'rgba(0, 200, 150, 0.2)';
+                card.className = 'insight-card';
+                card.style.borderColor = 'rgba(46, 204, 113, 0.2)';
                 card.style.background = 'var(--green-dim)';
+                card.onclick = () => showSubjectDetail(s.subject_name);
                 card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-size: 0.65rem; font-weight:700; color: var(--green); text-transform:uppercase;">Bunk Prediction</div>
-                            <div style="font-size: 1.1rem; font-weight:900; margin-top:4px; color: var(--green);">${safeBunk} classes</div>
-                            <div style="font-size: 0.74rem; color: var(--text2); margin-top:2px;">Safe to skip in ${s.subject_name}</div>
-                        </div>
-                        <div style="font-size: 2rem;">🎯</div>
+                    <div class="insight-left">
+                        <span class="insight-tag" style="color: var(--green);">Bunk Prediction</span>
+                        <span class="insight-title" style="color: var(--green);">${safeBunk} classes</span>
+                        <span class="insight-sub">Safe to skip in ${s.subject_name}</span>
                     </div>
+                    <div class="insight-right">🎯</div>
                 `;
                 container.appendChild(card);
             }
@@ -824,18 +974,17 @@ function renderInsights() {
             const mustAttend = Math.ceil((0.75 * s.held - s.present) / 0.25);
             if (mustAttend > 0) {
                 const card = document.createElement('div');
-                card.className = 'card';
-                card.style.borderColor = 'rgba(255, 69, 96, 0.2)';
+                card.className = 'insight-card';
+                card.style.borderColor = 'rgba(231, 76, 60, 0.2)';
                 card.style.background = 'var(--red-dim)';
+                card.onclick = () => showSubjectDetail(s.subject_name);
                 card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-size: 0.65rem; font-weight:700; color: var(--red); text-transform:uppercase;">Attendance Goal</div>
-                            <div style="font-size: 1.1rem; font-weight:900; margin-top:4px; color: var(--red);">${mustAttend} consecutive</div>
-                            <div style="font-size: 0.74rem; color: var(--text2); margin-top:2px;">Must attend classes in ${s.subject_name}</div>
-                        </div>
-                        <div style="font-size: 2rem;">⚠️</div>
+                    <div class="insight-left">
+                        <span class="insight-tag" style="color: var(--red);">Attendance Goal</span>
+                        <span class="insight-title" style="color: var(--red);">${mustAttend} consecutive</span>
+                        <span class="insight-sub">Must attend classes in ${s.subject_name}</span>
                     </div>
+                    <div class="insight-right">⚠️</div>
                 `;
                 container.appendChild(card);
             }
@@ -843,20 +992,28 @@ function renderInsights() {
     });
 
     // Render lowest attendance card
+    let lowestSub = null;
+    let lowestPerc = 101;
+    summaryData.forEach(s => {
+        if (s.held > 0 && s.percentage < lowestPerc) {
+            lowestPerc = s.percentage;
+            lowestSub = s;
+        }
+    });
+
     if (lowestSub) {
         const card = document.createElement('div');
-        card.className = 'card';
-        card.style.borderColor = 'rgba(255, 176, 32, 0.2)';
-        card.style.background = 'var(--yellow-dim)';
+        card.className = 'insight-card';
+        card.style.borderColor = 'rgba(230, 126, 34, 0.2)';
+        card.style.background = 'var(--orange-dim)';
+        card.onclick = () => showSubjectDetail(lowestSub.subject_name);
         card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-size: 0.65rem; font-weight:700; color: var(--yellow); text-transform:uppercase;">Recommendation</div>
-                    <div style="font-size: 1.1rem; font-weight:900; margin-top:4px; color: var(--yellow);">${lowestSub.subject_name}</div>
-                    <div style="font-size: 0.74rem; color: var(--text2); margin-top:2px;">Has your lowest attendance (${lowestSub.percentage.toFixed(1)}%). Try to attend!</div>
-                </div>
-                <div style="font-size: 2rem;">📈</div>
+            <div class="insight-left">
+                <span class="insight-tag" style="color: var(--orange);">Lowest Attendance</span>
+                <span class="insight-title" style="color: var(--orange);">${lowestSub.subject_name}</span>
+                <span class="insight-sub">Has your lowest attendance (${lowestPerc.toFixed(1)}%). Try to improve!</span>
             </div>
+            <div class="insight-right">📈</div>
         `;
         container.appendChild(card);
     }
@@ -870,21 +1027,27 @@ function renderSettingsPage() {
     const emailLbl = document.getElementById('settingsProfileEmail');
 
     if (!connectionData) {
-        enrollLbl.textContent = 'Enrollment: Not Connected';
-        badge.textContent = 'Disconnected';
-        badge.className = 'badge bm';
-        syncLbl.textContent = 'Last Synced: Never';
+        if (enrollLbl) enrollLbl.textContent = 'Enrollment: Not Connected';
+        if (badge) {
+            badge.textContent = 'Disconnected';
+            badge.className = 'hero-badge critical';
+        }
+        if (syncLbl) syncLbl.textContent = 'Last Synced: Never';
     } else {
-        enrollLbl.textContent = `Enrollment: ${connectionData.enrollment_no}`;
-        badge.textContent = connectionData.last_sync_status === 'SUCCESS' ? 'Connected' : 'Sync Error';
-        badge.className = connectionData.last_sync_status === 'SUCCESS' ? 'badge g2b' : 'badge g1b';
-        const lastStr = connectionData.last_sync_at ? fmtDateTime(connectionData.last_sync_at) : 'Never';
-        syncLbl.textContent = `Last Synced: ${lastStr}`;
+        if (enrollLbl) enrollLbl.textContent = `Enrollment: ${connectionData.enrollment_no}`;
+        if (badge) {
+            badge.textContent = connectionData.last_sync_status === 'SUCCESS' ? 'Connected' : 'Sync Error';
+            badge.className = connectionData.last_sync_status === 'SUCCESS' ? 'hero-badge safe' : 'hero-badge critical';
+        }
+        if (syncLbl) {
+            const lastStr = connectionData.last_sync_at ? fmtDateTime(connectionData.last_sync_at) : 'Never';
+            syncLbl.textContent = `Last Synced: ${lastStr}`;
+        }
     }
 
     if (currentUser) {
-        nameLbl.textContent = currentUser.user_metadata?.full_name || 'Student';
-        emailLbl.textContent = currentUser.email || '';
+        if (nameLbl) nameLbl.textContent = currentUser.user_metadata?.full_name || 'Student';
+        if (emailLbl) emailLbl.textContent = currentUser.email || '';
     }
 }
 
@@ -892,21 +1055,261 @@ function renderSettingsPage() {
 function toggleTheme() {
     const on = document.body.classList.toggle('lm');
     localStorage.setItem('ae_theme', on ? 'lm' : 'dk');
-    document.getElementById('themeBtn').textContent = on ? '☀️' : '🌙';
+    const checkbox = document.getElementById('themeBtn');
+    if (checkbox) checkbox.checked = on;
 }
 
 function go(v, el) {
     document.querySelectorAll('.view').forEach(x => x.classList.remove('act'));
     document.querySelectorAll('.ntab').forEach(x => x.classList.remove('act'));
     
+    // Hide subject detail explicitly if going to another tab
+    const detailView = document.getElementById('v-subject-detail');
+    if (detailView) detailView.classList.remove('act');
+    
     document.getElementById('v-' + v).classList.add('act');
     el.classList.add('act');
 
     if (v === 'overview') renderDashboard();
     if (v === 'subjects') renderSubjects();
-    if (v === 'history') renderHistory();
     if (v === 'insights') renderInsights();
     if (v === 'settings') renderSettingsPage();
+}
+
+// ===== SUBJECT DETAIL & TREND CHART CONTROLLER =====
+let currentSubjectName = '';
+let showFullHistory = false;
+
+function showSubjectDetail(subjectName) {
+    currentSubjectName = subjectName;
+    showFullHistory = false;
+    
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('act'));
+    document.getElementById('v-subject-detail').classList.add('act');
+    
+    renderSubjectDetail(subjectName);
+}
+
+function closeSubjectDetail() {
+    document.getElementById('v-subject-detail').classList.remove('act');
+    document.getElementById('v-subjects').classList.add('act');
+}
+
+function renderSubjectDetail(subjectName) {
+    // Find subject summary
+    const subSummary = summaryData.find(s => s.subject_name === subjectName);
+    if (!subSummary) return;
+    
+    document.getElementById('detailSubjectName').textContent = subSummary.subject_name;
+    document.getElementById('detailSubjectCode').textContent = 'AccSoft Synced Course';
+    document.getElementById('detailSubjectPerc').textContent = `${subSummary.percentage.toFixed(1)}%`;
+    
+    // Ring progress
+    const ring = document.getElementById('detailSubjectSvgRing');
+    const label = document.getElementById('detailSubjectSvgLabel');
+    if (ring && label) {
+        const offset = 201.06 - (201.06 * Math.min(subSummary.percentage, 100)) / 100;
+        ring.setAttribute('stroke-dashoffset', offset);
+        const color = subSummary.percentage >= 75 ? 'var(--green)' : subSummary.percentage >= 65 ? 'var(--orange)' : 'var(--red)';
+        ring.setAttribute('stroke', color);
+        label.textContent = `${Math.round(subSummary.percentage)}%`;
+        label.style.color = color;
+    }
+
+    const badge = document.getElementById('detailSubjectStatus');
+    if (badge) {
+        const color = subSummary.percentage >= 75 ? 'safe' : subSummary.percentage >= 65 ? 'warning' : 'critical';
+        badge.className = `hero-badge ${color}`;
+        badge.textContent = subSummary.percentage >= 75 ? 'Good' : subSummary.percentage >= 65 ? 'Warning' : 'Critical';
+    }
+
+    // Grid stats
+    document.getElementById('detailClassesHeld').textContent = subSummary.held;
+    document.getElementById('detailClassesPresent').textContent = subSummary.present;
+    document.getElementById('detailClassesAbsent').textContent = subSummary.absent;
+
+    // Recovery Recommendation Calculations
+    const recCard = document.getElementById('detailRecoveryCard');
+    const recText = document.getElementById('detailRecoveryText');
+    if (recCard && recText) {
+        const held = subSummary.held;
+        const present = subSummary.present;
+        const percentage = subSummary.percentage;
+
+        if (percentage >= 75) {
+            const safeBunk = Math.floor((present - 0.75 * held) / 0.75);
+            recCard.className = 'recover-card good';
+            if (safeBunk > 0) {
+                recText.textContent = `Awesome! You can miss ${safeBunk} classes safely to stay above 75% target.`;
+            } else {
+                recText.textContent = `Borderline safe. Do not miss your next class to stay above 75%.`;
+            }
+        } else {
+            const mustAttend = Math.ceil((0.75 * held - present) / 0.25);
+            recCard.className = 'recover-card critical';
+            if (mustAttend > 0) {
+                recText.textContent = `Action Required: Attend ${mustAttend} consecutive classes to recover to 75% target.`;
+            } else {
+                recText.textContent = `Critical attendance. Attend your next classes to recover.`;
+            }
+        }
+    }
+
+    // Filter subject logs
+    const subjectLogs = logsData.filter(l => l.subject_name === subjectName);
+    
+    // Sort logs chronologically by date ascending for trend calculation
+    const chronologicalLogs = [...subjectLogs].sort((a, b) => new Date(a.attendance_date) - new Date(b.attendance_date));
+    
+    // Draw SVG Trend Chart
+    drawTrendChart(chronologicalLogs, 'subjectTrendChart');
+
+    // Populate logs history (sort descending for recent log preview)
+    const recentLogs = [...subjectLogs].sort((a, b) => new Date(b.attendance_date) - new Date(a.attendance_date));
+    renderLogsList(recentLogs);
+}
+
+function renderLogsList(logs) {
+    const container = document.getElementById('detailSubjectLogsContainer');
+    const btn = document.getElementById('toggleFullHistoryBtn');
+    if (!container) return;
+
+    container.innerHTML = '';
+    
+    if (logs.length === 0) {
+        container.innerHTML = '<div class="empty-state-sub" style="text-align:center; padding:12px 0;">No session history found for this subject.</div>';
+        if (btn) btn.style.display = 'none';
+        return;
+    }
+
+    if (btn) btn.style.display = 'block';
+
+    const limit = showFullHistory ? logs.length : Math.min(5, logs.length);
+    if (btn) {
+        btn.textContent = showFullHistory ? 'Show Less' : 'View Full History';
+    }
+
+    for (let i = 0; i < limit; i++) {
+        const l = logs[i];
+        const row = document.createElement('div');
+        row.className = 'hist-item';
+        
+        const isPresent = l.status === 'P' || l.status.toUpperCase() === 'PRESENT';
+        const formattedDate = fmtDateTime(l.attendance_date).split(',')[0]; // get Day Month Year
+
+        row.innerHTML = `
+            <div class="hist-item-left">
+                <span class="hist-item-date">${formattedDate}</span>
+                <span class="hist-item-period">Period ${l.period_no || '--'}</span>
+            </div>
+            <div class="hist-badge ${isPresent ? 'present' : 'absent'}">${l.status}</div>
+        `;
+        container.appendChild(row);
+    }
+}
+
+function toggleFullHistory() {
+    showFullHistory = !showFullHistory;
+    const subjectLogs = logsData.filter(l => l.subject_name === currentSubjectName);
+    const recentLogs = [...subjectLogs].sort((a, b) => new Date(b.attendance_date) - new Date(a.attendance_date));
+    renderLogsList(recentLogs);
+}
+
+function drawTrendChart(subjectLogs, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (subjectLogs.length < 2) {
+        container.innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center; color:var(--text-sec); font-size:0.76rem;">Need at least 2 sessions to show trend chart</div>';
+        return;
+    }
+
+    // Calculate running percentage points
+    let runningPresent = 0;
+    let runningHeld = 0;
+    const points = [];
+
+    subjectLogs.forEach((log) => {
+        runningHeld++;
+        const isPresent = log.status === 'P' || log.status.toUpperCase() === 'PRESENT';
+        if (isPresent) {
+            runningPresent++;
+        }
+        const pct = (runningPresent / runningHeld) * 100;
+        points.push(pct);
+    });
+
+    const w = 320;
+    const h = 130;
+    const paddingLeft = 25;
+    const paddingRight = 10;
+    const paddingTop = 10;
+    const paddingBottom = 20;
+
+    const chartW = w - paddingLeft - paddingRight;
+    const chartH = h - paddingTop - paddingBottom;
+
+    // Build SVG
+    let svgHtml = `<svg viewBox="0 0 ${w} ${h}">
+        <defs>
+            <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="var(--primary)" stop-opacity="0.0"/>
+            </linearGradient>
+        </defs>
+        
+        <!-- Y Grid lines & labels (50%, 75%, 100%) -->
+        <line x1="${paddingLeft}" y1="${paddingTop}" x2="${w - paddingRight}" y2="${paddingTop}" class="chart-grid-line" />
+        <text x="5" y="${paddingTop + 3}" class="chart-label">100%</text>
+
+        <line x1="${paddingLeft}" y1="${paddingTop + chartH * 0.25}" x2="${w - paddingRight}" y2="${paddingTop + chartH * 0.25}" class="chart-grid-line" style="stroke: rgba(46, 204, 113, 0.2); stroke-dasharray:none;" />
+        <text x="5" y="${paddingTop + chartH * 0.25 + 3}" class="chart-label" style="fill: var(--green);">75%</text>
+
+        <line x1="${paddingLeft}" y1="${paddingTop + chartH * 0.5}" x2="${w - paddingRight}" y2="${paddingTop + chartH * 0.5}" class="chart-grid-line" />
+        <text x="5" y="${paddingTop + chartH * 0.5 + 3}" class="chart-label">50%</text>
+
+        <line x1="${paddingLeft}" y1="${h - paddingBottom}" x2="${w - paddingRight}" y2="${h - paddingBottom}" style="stroke: var(--border); stroke-width: 1.5px;" />
+    `;
+
+    // Coordinates mapping
+    const n = points.length;
+    const coords = [];
+    points.forEach((pct, idx) => {
+        const x = paddingLeft + (idx / (n - 1)) * chartW;
+        const y = paddingTop + chartH - (pct / 100) * chartH;
+        coords.push({ x, y });
+    });
+
+    let linePath = `M ${coords[0].x} ${coords[0].y}`;
+    let areaPath = `M ${coords[0].x} ${coords[0].y}`;
+    
+    for (let i = 1; i < coords.length; i++) {
+        linePath += ` L ${coords[i].x} ${coords[i].y}`;
+        areaPath += ` L ${coords[i].x} ${coords[i].y}`;
+    }
+    
+    areaPath += ` L ${coords[coords.length - 1].x} ${h - paddingBottom} L ${coords[0].x} ${h - paddingBottom} Z`;
+
+    svgHtml += `
+        <path d="${areaPath}" class="chart-area" />
+        <path d="${linePath}" class="chart-line" />
+    `;
+
+    // Draw last point circle
+    const lastCoord = coords[coords.length - 1];
+    svgHtml += `<circle cx="${lastCoord.x}" cy="${lastCoord.y}" r="4" class="chart-point" />`;
+
+    // Add Date Labels on X Axis (first and last date)
+    const firstDate = fmtDateTime(subjectLogs[0].attendance_date).split(',')[0];
+    const lastDate = fmtDateTime(subjectLogs[subjectLogs.length - 1].attendance_date).split(',')[0];
+
+    svgHtml += `
+        <text x="${paddingLeft}" y="${h - 5}" class="chart-label">${firstDate}</text>
+        <text x="${w - paddingRight}" y="${h - 5}" class="chart-label" text-anchor="end">${lastDate}</text>
+    </svg>`;
+
+    container.innerHTML = svgHtml;
 }
 
 // ===== HELPER FUNCTIONS =====
@@ -930,7 +1333,9 @@ function fmtDateTime(isoStr) {
 
 function toast(m) {
     const t = document.getElementById('toast');
-    t.textContent = m;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+    if (t) {
+        t.textContent = m;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
 }
