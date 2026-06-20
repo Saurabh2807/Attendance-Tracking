@@ -131,10 +131,14 @@ async function handleSignOut() {
 async function handleGoogleSignIn() {
     toast("⏳ Connecting to Google...");
     try {
+        const redirectUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? window.location.origin + window.location.pathname
+            : 'https://saurabh2807.github.io/Attendance-Tracking/';
+
         const { error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin + window.location.pathname
+                redirectTo: redirectUrl
             }
         });
         if (error) throw error;
