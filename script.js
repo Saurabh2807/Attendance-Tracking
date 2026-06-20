@@ -128,6 +128,21 @@ async function handleSignOut() {
     }
 }
 
+async function handleGoogleSignIn() {
+    toast("⏳ Connecting to Google...");
+    try {
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin + window.location.pathname
+            }
+        });
+        if (error) throw error;
+    } catch (err) {
+        toast(`❌ Google Login failed: ${err.message}`);
+    }
+}
+
 // ===== ACCSOFT PORTAL LOGINS =====
 async function checkConnectionAndLoadData() {
     try {

@@ -77,7 +77,7 @@ begin
   insert into public.profiles (id, full_name, enrollment_no)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'full_name', ''),
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''),
     coalesce(new.raw_user_meta_data->>'enrollment_no', '')
   );
   return new;

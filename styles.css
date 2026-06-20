@@ -663,6 +663,53 @@
             border: 1px solid var(--border)
         }
 
+        .btn-google {
+            background: #ffffff;
+            color: #1f1f1f;
+            border: 1px solid #dadce0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .btn-google:hover {
+            background: #f8f9fa;
+            border-color: #c6c6c6;
+        }
+
+        .google-icon {
+            width: 18px;
+            height: 18px;
+            display: inline-block;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 16px 0;
+            color: var(--text3);
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .auth-divider::before {
+            margin-right: 12px;
+        }
+
+        .auth-divider::after {
+            margin-left: 12px;
+        }
+
         .quick-row {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
