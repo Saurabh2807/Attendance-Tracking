@@ -56,10 +56,7 @@
                 <div class="fl">Email Address</div>
                 <input type="email" class="dinput" id="signUpEmail" placeholder="Enter your email">
                 
-                <div class="fl">Password</div>
-                <input type="password" class="dinput" id="signUpPass" placeholder="Enter password">
-                
-                <button class="btn btn-or" onclick="handleSignUp()" style="margin-top: 8px; margin-bottom: 16px;">Sign Up</button>
+                <button class="btn btn-or" onclick="handleSendSignUpOtp()" style="margin-top: 8px; margin-bottom: 16px;">Send OTP</button>
                 
                 <div class="auth-divider">OR</div>
                 
@@ -91,10 +88,7 @@
                 <div class="fl">Email Address</div>
                 <input type="email" class="dinput" id="loginEmail" placeholder="Enter your email">
                 
-                <div class="fl">Password</div>
-                <input type="password" class="dinput" id="loginPass" placeholder="Enter password">
-                
-                <button class="btn btn-or" onclick="handleLogin()" style="margin-top: 8px; margin-bottom: 16px;">Log In</button>
+                <button class="btn btn-or" onclick="handleSendLoginOtp()" style="margin-top: 8px; margin-bottom: 16px;">Send OTP</button>
                 
                 <div class="auth-divider">OR</div>
                 
@@ -110,6 +104,27 @@
                 
                 <div style="text-align: center; font-size: 0.8rem; color: var(--text2);">
                     Don't have an account? <a href="#" onclick="showAuthTab('signup')" style="color: var(--or); font-weight: 700; text-decoration: none;">Sign Up</a>
+                </div>
+            </div>
+
+            <!-- 5. OTP Verification Screen -->
+            <div id="otpScreen" class="auth-section" style="display:none">
+                <div class="ob-head" style="display:flex; align-items:center; gap: 8px; margin-bottom: 16px;">
+                    <button class="back-arrow" onclick="cancelOtpFlow()">←</button>
+                    <div>
+                        <div class="auth-title">Verify Code</div>
+                        <div class="auth-sub" id="otpSub">Enter the 6-digit code sent to your email</div>
+                    </div>
+                </div>
+                
+                <div class="fl">6-Digit Verification Code</div>
+                <input type="text" class="dinput" id="otpCode" placeholder="xxxxxx" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 8px; font-weight: 700;">
+                
+                <button class="btn btn-or" id="verifyOtpBtn" onclick="handleVerifyOtp()" style="margin-top: 8px; margin-bottom: 16px;">Verify Code</button>
+                
+                <div style="text-align: center; font-size: 0.8rem; color: var(--text2);">
+                    Didn't receive code? 
+                    <button class="btn-link" id="resendOtpBtn" onclick="handleResendOtp()" style="color: var(--or); font-weight: 700; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.8rem;" disabled>Resend in <span id="otpCountdown">60</span>s</button>
                 </div>
             </div>
 

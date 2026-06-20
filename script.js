@@ -15,6 +15,13 @@ let connectionData = null;
 let summaryData = [];
 let logsData = [];
 
+// OTP States
+let otpSourceScreen = 'login';
+let otpEmail = '';
+let otpName = '';
+let otpTimer = null;
+let otpCountdownValue = 60;
+
 // Navigation mapping
 const DNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -74,23 +81,32 @@ function showAuthTab(tab) {
         document.getElementById('signupScreen').style.display = 'block';
     } else if (tab === 'connect') {
         document.getElementById('connectScreen').style.display = 'block';
+    } else if (tab === 'otp') {
+        document.getElementById('otpScreen').style.display = 'block';
     }
 }
 
-async function handleSignUp() {
+async function handleSendSignUpOtp() {
     const name = document.getElementById('signUpName').value.trim();
     const email = document.getElementById('signUpEmail').value.trim();
-    const pass = document.getElementById('signUpPass').value;
 
-    if (!name || !email || !pass) {
+    if (!name || !email) {
         toast("❌ Please fill in all fields");
         return;
     }
 
-    toast("⏳ Signing up...");
-    const { data, error } = await supabaseClient.auth.signUp({
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast("❌ Please enter a valid email address");
+        return;
+    }
+
+    otpSourceScreen = 'signup';
+    otpEmail = email;
+    otpName = name;
+
+    toast("⏳ Sending verification code...");
+    const { error } = await supabaseClient.auth.signInWithOtp({
         email,
-        password: pass,
         options: {
             data: {
                 full_name: name
@@ -99,32 +115,126 @@ async function handleSignUp() {
     });
 
     if (error) {
-        toast(`❌ Sign up failed: ${error.message}`);
+        toast(`❌ Failed to send code: ${error.message}`);
     } else {
-        toast("✅ Sign up successful! Logging you in...");
+        toast("✅ Code sent to your email!");
+        document.getElementById('otpCode').value = '';
+        showAuthTab('otp');
+        document.getElementById('otpSub').textContent = `Enter the 6-digit code sent to ${email}`;
+        startOtpCountdown();
     }
 }
 
-async function handleLogin() {
+async function handleSendLoginOtp() {
     const email = document.getElementById('loginEmail').value.trim();
-    const pass = document.getElementById('loginPass').value;
 
-    if (!email || !pass) {
-        toast("❌ Please fill in all fields");
+    if (!email) {
+        toast("❌ Please enter your email");
         return;
     }
 
-    toast("⏳ Logging in...");
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password: pass
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast("❌ Please enter a valid email address");
+        return;
+    }
+
+    otpSourceScreen = 'login';
+    otpEmail = email;
+    otpName = '';
+
+    toast("⏳ Sending verification code...");
+    const { error } = await supabaseClient.auth.signInWithOtp({
+        email
     });
 
     if (error) {
-        toast(`❌ Login failed: ${error.message}`);
+        toast(`❌ Failed to send code: ${error.message}`);
     } else {
-        toast("✅ Welcome back!");
+        toast("✅ Code sent to your email!");
+        document.getElementById('otpCode').value = '';
+        showAuthTab('otp');
+        document.getElementById('otpSub').textContent = `Enter the 6-digit code sent to ${email}`;
+        startOtpCountdown();
     }
+}
+
+function startOtpCountdown() {
+    if (otpTimer) clearInterval(otpTimer);
+    
+    otpCountdownValue = 60;
+    const btn = document.getElementById('resendOtpBtn');
+    btn.disabled = true;
+    btn.textContent = `Resend in ${otpCountdownValue}s`;
+
+    otpTimer = setInterval(() => {
+        otpCountdownValue--;
+        if (otpCountdownValue <= 0) {
+            clearInterval(otpTimer);
+            otpTimer = null;
+            btn.disabled = false;
+            btn.textContent = "Resend Code";
+        } else {
+            btn.textContent = `Resend in ${otpCountdownValue}s`;
+        }
+    }, 1000);
+}
+
+async function handleVerifyOtp() {
+    const code = document.getElementById('otpCode').value.trim();
+
+    if (!code || code.length !== 6) {
+        toast("❌ Please enter the 6-digit verification code");
+        return;
+    }
+
+    toast("⏳ Verifying code...");
+    const { data, error } = await supabaseClient.auth.verifyOtp({
+        email: otpEmail,
+        token: code,
+        type: 'email'
+    });
+
+    if (error) {
+        toast(`❌ Verification failed: ${error.message}`);
+    } else {
+        toast("✅ Code verified successfully!");
+        if (otpTimer) {
+            clearInterval(otpTimer);
+            otpTimer = null;
+        }
+    }
+}
+
+async function handleResendOtp() {
+    if (!otpEmail) return;
+    
+    toast("⏳ Resending code...");
+    
+    const options = {};
+    if (otpSourceScreen === 'signup' && otpName) {
+        options.data = { full_name: otpName };
+    }
+
+    const { error } = await supabaseClient.auth.signInWithOtp({
+        email: otpEmail,
+        options: options
+    });
+
+    if (error) {
+        toast(`❌ Resend failed: ${error.message}`);
+    } else {
+        toast("✅ New code sent!");
+        document.getElementById('otpCode').value = '';
+        startOtpCountdown();
+    }
+}
+
+function cancelOtpFlow() {
+    if (otpTimer) {
+        clearInterval(otpTimer);
+        otpTimer = null;
+    }
+    showAuthTab(otpSourceScreen);
 }
 
 async function handleSignOut() {
