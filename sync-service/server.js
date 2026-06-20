@@ -123,7 +123,10 @@ async function scrapeAccsoft(enrollment, password) {
     let getResponse;
     try {
         getResponse = await client.get(LOGIN_URL);
+        console.log(`[DEBUG_SYNC] GET Login page status: ${getResponse.status}`);
+        console.log(`[DEBUG_SYNC] GET Login page cookies:`, jar.toJSON().cookies.map(c => `${c.key}=${c.value}`).join('; '));
     } catch (err) {
+        console.error(`[DEBUG_SYNC] GET Login page failed:`, err);
         throw new Error('ACC_SOFT_UNAVAILABLE');
     }
 
@@ -161,6 +164,7 @@ async function scrapeAccsoft(enrollment, password) {
     });
 
     if (hiddenCount === 0) {
+        console.error(`[DEBUG_SYNC] Parsing login inputs failed: no inputs found.`);
         throw new Error('LOGIN_FAILED');
     }
 
@@ -170,13 +174,22 @@ async function scrapeAccsoft(enrollment, password) {
     // Step 2: Login Post submission
     let postResponse;
     try {
+        console.log(`[DEBUG_SYNC] POST Login URL: ${LOGIN_URL}`);
+        console.log(`[DEBUG_SYNC] POST Login Payload:`, payload.toString());
         postResponse = await client.post(LOGIN_URL, payload, {
             headers: {
                 'Referer': LOGIN_URL,
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
+        console.log(`[DEBUG_SYNC] POST Login response status: ${postResponse.status}`);
+        console.log(`[DEBUG_SYNC] POST Login final URL: ${postResponse.request.res.responseUrl || postResponse.config.url}`);
+        console.log(`[DEBUG_SYNC] POST Login response body length: ${postResponse.data ? postResponse.data.length : 0}`);
+        if (postResponse.data) {
+            console.log(`[DEBUG_SYNC] POST Login response snippet:`, postResponse.data.substring(0, 500).replace(/\s+/g, ' '));
+        }
     } catch (err) {
+        console.error(`[DEBUG_SYNC] POST Login failed:`, err);
         throw new Error('LOGIN_FAILED');
     }
 
@@ -187,19 +200,29 @@ async function scrapeAccsoft(enrollment, password) {
                             postResponse.data.includes('Try Again');
 
     if (isLoginPage || hasErrorMessage) {
+        console.warn(`[DEBUG_SYNC] Login failed. isLoginPage: ${isLoginPage}, hasErrorMessage: ${hasErrorMessage}`);
         throw new Error('INVALID_CREDENTIALS');
     }
 
     // Step 3: Fetch Attendance status page
     let attResponse;
     try {
+        console.log(`[DEBUG_SYNC] GET Attendance URL: ${ATTENDANCE_URL}`);
         attResponse = await client.get(ATTENDANCE_URL);
+        console.log(`[DEBUG_SYNC] GET Attendance response status: ${attResponse.status}`);
+        console.log(`[DEBUG_SYNC] GET Attendance final URL: ${attResponse.request.res.responseUrl || attResponse.config.url}`);
+        console.log(`[DEBUG_SYNC] GET Attendance body length: ${attResponse.data ? attResponse.data.length : 0}`);
+        if (attResponse.data) {
+            console.log(`[DEBUG_SYNC] GET Attendance body snippet:`, attResponse.data.substring(0, 500).replace(/\s+/g, ' '));
+        }
     } catch (err) {
+        console.error(`[DEBUG_SYNC] GET Attendance failed:`, err);
         throw new Error('LOGIN_FAILED');
     }
 
     const attFinalUrl = attResponse.request.res.responseUrl || attResponse.config.url;
     if (attFinalUrl.toLowerCase().includes('studentlogin.aspx')) {
+        console.warn(`[DEBUG_SYNC] GET Attendance redirected to login page. Session expired or failed.`);
         throw new Error('LOGIN_FAILED');
     }
 
@@ -208,8 +231,11 @@ async function scrapeAccsoft(enrollment, password) {
     let summaryData = [];
     let logsData = [];
 
+    console.log(`[DEBUG_SYNC] Total table tags found: ${attDoc('table').length}`);
+
     attDoc('table').each((tableIdx, table) => {
         const rows = attDoc(table).find('tr');
+        console.log(`[DEBUG_SYNC] Parsing Table ${tableIdx}: found ${rows.length} rows`);
         if (rows.length === 0) return;
 
         let headerRow = null;
@@ -228,6 +254,7 @@ async function scrapeAccsoft(enrollment, password) {
                     present: cells.indexOf('present count') !== -1 ? cells.indexOf('present count') : cells.indexOf('net present'),
                     absent: cells.indexOf('absent count')
                 };
+                console.log(`[DEBUG_SYNC] Table ${tableIdx} matches SUBJECT SUMMARY header:`, cells, 'colMap:', colMap);
                 break;
             }
 
@@ -240,11 +267,15 @@ async function scrapeAccsoft(enrollment, password) {
                     subject: cells.indexOf('subject'),
                     status: cells.indexOf('attendance status')
                 };
+                console.log(`[DEBUG_SYNC] Table ${tableIdx} matches DATEWISE LOGS header:`, cells, 'colMap:', colMap);
                 break;
             }
         }
 
-        if (!headerRow) return;
+        if (!headerRow) {
+            console.log(`[DEBUG_SYNC] Table ${tableIdx} did not match any header structure.`);
+            return;
+        }
 
         for (let r = headerIdx + 1; r < rows.length; r++) {
             const cells = attDoc(rows[r]).find('td').map((c, el) => attDoc(el).text().replace(/\s+/g, ' ').trim()).get();
@@ -285,7 +316,12 @@ async function scrapeAccsoft(enrollment, password) {
         }
     });
 
+    console.log(`[DEBUG_SYNC] Number of subject rows detected (Summary): ${summaryData.length}`);
+    console.log(`[DEBUG_SYNC] Parsed subject objects:`, JSON.stringify(summaryData, null, 2));
+    console.log(`[DEBUG_SYNC] Parsed attendance history rows:`, JSON.stringify(logsData, null, 2));
+
     if (summaryData.length === 0 && logsData.length === 0) {
+        console.error(`[DEBUG_SYNC] Parsing failed: no summaries or logs extracted.`);
         throw new Error('PARSING_FAILED');
     }
 
@@ -412,7 +448,14 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
         const { summaryData, logsData } = await scrapeAccsoft(conn.enrollment_no, password);
 
         // Step 4: Write summaries
-        const summariesToInsert = summaryData.map(s => ({
+        // Deduplicate summaries in memory to prevent key collision error: "ON CONFLICT DO UPDATE command cannot affect row a second time"
+        const summaryMap = new Map();
+        for (const s of summaryData) {
+            summaryMap.set(s.subject_name, s);
+        }
+        const uniqueSummaries = Array.from(summaryMap.values());
+
+        const summariesToInsert = uniqueSummaries.map(s => ({
             user_id: req.user.id,
             subject_name: s.subject_name,
             held: s.held,
@@ -422,15 +465,30 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
             synced_at: new Date().toISOString()
         }));
 
+        console.log(`[DEBUG_SYNC] Final summaries array sent to Supabase:`, JSON.stringify(summariesToInsert, null, 2));
+
         if (summariesToInsert.length > 0) {
-            const { error: sumErr } = await req.supabase
+            const { data: sumResult, error: sumErr } = await req.supabase
                 .from('attendance_summary')
-                .upsert(summariesToInsert, { onConflict: 'user_id,subject_name' });
-            if (sumErr) throw sumErr;
+                .upsert(summariesToInsert, { onConflict: 'user_id,subject_name' })
+                .select();
+            if (sumErr) {
+                console.error(`[DEBUG_SYNC] Full Supabase error response for attendance_summary:`, JSON.stringify(sumErr, null, 2));
+                throw sumErr;
+            }
+            console.log(`[DEBUG_SYNC] Supabase attendance_summary upsert success. Rows updated: ${sumResult ? sumResult.length : 0}`);
         }
 
         // Step 5: Write datewise logs
-        const logsToInsert = logsData.map(l => ({
+        // Deduplicate logs in memory to prevent key collision error: "ON CONFLICT DO UPDATE command cannot affect row a second time"
+        const logMap = new Map();
+        for (const l of logsData) {
+            const key = `${l.date}_${l.period}_${l.subject}`;
+            logMap.set(key, l);
+        }
+        const uniqueLogs = Array.from(logMap.values());
+
+        const logsToInsert = uniqueLogs.map(l => ({
             user_id: req.user.id,
             attendance_date: l.date,
             period_no: l.period,
@@ -439,11 +497,18 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
             synced_at: new Date().toISOString()
         }));
 
+        console.log(`[DEBUG_SYNC] Final logs array sent to Supabase:`, JSON.stringify(logsToInsert, null, 2));
+
         if (logsToInsert.length > 0) {
-            const { error: logsErr } = await req.supabase
+            const { data: logsResult, error: logsErr } = await req.supabase
                 .from('attendance_logs')
-                .upsert(logsToInsert, { onConflict: 'user_id,attendance_date,period_no,subject_name' });
-            if (logsErr) throw logsErr;
+                .upsert(logsToInsert, { onConflict: 'user_id,attendance_date,period_no,subject_name' })
+                .select();
+            if (logsErr) {
+                console.error(`[DEBUG_SYNC] Full Supabase error response for attendance_logs:`, JSON.stringify(logsErr, null, 2));
+                throw logsErr;
+            }
+            console.log(`[DEBUG_SYNC] Supabase attendance_logs upsert success. Rows updated: ${logsResult ? logsResult.length : 0}`);
         }
 
         // Step 6: Log SUCCESS state
@@ -465,7 +530,7 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
 
     } catch (err) {
         const errMsg = err.message || 'LOGIN_FAILED';
-        console.error(`Attendance sync failed for ${req.user.id}: ${errMsg}`);
+        console.error(`Attendance sync failed for ${req.user.id}:`, err);
 
         // Update database with sync error status
         await req.supabase
