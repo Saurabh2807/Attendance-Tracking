@@ -1312,6 +1312,19 @@ function drawTrendChart(subjectLogs, containerId) {
     container.innerHTML = svgHtml;
 }
 
+function toggleSettingsMenu() {
+    const settingsView = document.getElementById('v-settings');
+    const isSettingsActive = settingsView && settingsView.classList.contains('act');
+    
+    if (isSettingsActive) {
+        // Go back to overview (Home)
+        go('overview', document.querySelectorAll('.ntab')[0]);
+    } else {
+        // Go to settings tab
+        go('settings', document.querySelectorAll('.ntab')[4]);
+    }
+}
+
 // ===== HELPER FUNCTIONS =====
 const fmtD = d => {
     const p = d.split('-');

@@ -468,19 +468,29 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
         console.log(`[DEBUG_SYNC] Final summaries array sent to Supabase:`, JSON.stringify(summariesToInsert, null, 2));
 
         if (summariesToInsert.length > 0) {
+            // Delete old summaries first to prevent duplicate accumulation or orphan subjects
+            const { error: delSumErr } = await req.supabase
+                .from('attendance_summary')
+                .delete()
+                .eq('user_id', req.user.id);
+            if (delSumErr) {
+                console.error(`[DEBUG_SYNC] Error clearing old summaries:`, delSumErr);
+                throw delSumErr;
+            }
+
             const { data: sumResult, error: sumErr } = await req.supabase
                 .from('attendance_summary')
-                .upsert(summariesToInsert, { onConflict: 'user_id,subject_name' })
+                .insert(summariesToInsert)
                 .select();
             if (sumErr) {
                 console.error(`[DEBUG_SYNC] Full Supabase error response for attendance_summary:`, JSON.stringify(sumErr, null, 2));
                 throw sumErr;
             }
-            console.log(`[DEBUG_SYNC] Supabase attendance_summary upsert success. Rows updated: ${sumResult ? sumResult.length : 0}`);
+            console.log(`[DEBUG_SYNC] Supabase attendance_summary write success. Rows created: ${sumResult ? sumResult.length : 0}`);
         }
 
         // Step 5: Write datewise logs
-        // Deduplicate logs in memory to prevent key collision error: "ON CONFLICT DO UPDATE command cannot affect row a second time"
+        // Deduplicate logs in memory to prevent key collision error
         const logMap = new Map();
         for (const l of logsData) {
             const key = `${l.date}_${l.period}_${l.subject}`;
@@ -500,15 +510,25 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
         console.log(`[DEBUG_SYNC] Final logs array sent to Supabase:`, JSON.stringify(logsToInsert, null, 2));
 
         if (logsToInsert.length > 0) {
+            // Delete old logs first to prevent duplicate accumulation
+            const { error: delLogsErr } = await req.supabase
+                .from('attendance_logs')
+                .delete()
+                .eq('user_id', req.user.id);
+            if (delLogsErr) {
+                console.error(`[DEBUG_SYNC] Error clearing old logs:`, delLogsErr);
+                throw delLogsErr;
+            }
+
             const { data: logsResult, error: logsErr } = await req.supabase
                 .from('attendance_logs')
-                .upsert(logsToInsert, { onConflict: 'user_id,attendance_date,period_no,subject_name' })
+                .insert(logsToInsert)
                 .select();
             if (logsErr) {
                 console.error(`[DEBUG_SYNC] Full Supabase error response for attendance_logs:`, JSON.stringify(logsErr, null, 2));
                 throw logsErr;
             }
-            console.log(`[DEBUG_SYNC] Supabase attendance_logs upsert success. Rows updated: ${logsResult ? logsResult.length : 0}`);
+            console.log(`[DEBUG_SYNC] Supabase attendance_logs write success. Rows created: ${logsResult ? logsResult.length : 0}`);
         }
 
         // Step 6: Log SUCCESS state
