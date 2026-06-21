@@ -339,7 +339,7 @@ async function checkConnectionAndLoadData() {
             
             // Set header labels
             const name = currentUser.user_metadata?.full_name || 'Student';
-            document.getElementById('headerWelcome').textContent = `Hello, ${name} 👋`;
+            document.getElementById('headerWelcome').textContent = `Hi, ${name} 👋`;
             
             // Refresh local state lists
             await refreshData();
@@ -550,6 +550,17 @@ async function refreshData() {
             .single();
 
         connectionData = conn;
+
+        // Update welcome card subtext (Last Sync time)
+        const lastSyncEl = document.getElementById('headerLastSync');
+        if (lastSyncEl) {
+            if (connectionData) {
+                const lastSyncStr = connectionData.last_sync_at ? fmtDateTime(connectionData.last_sync_at) : 'Never';
+                lastSyncEl.textContent = `Last Sync: ${lastSyncStr}`;
+            } else {
+                lastSyncEl.textContent = 'Not Connected';
+            }
+        }
 
         // Fetch Summary
         const { data: summaries } = await supabaseClient
