@@ -335,7 +335,7 @@ async function checkConnectionAndLoadData() {
         } else {
             // Account is connected - transition to main application layout
             document.getElementById('ob').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
+            document.getElementById('app').style.display = 'flex';
             
             // Set header labels
             const name = currentUser.user_metadata?.full_name || 'Student';
