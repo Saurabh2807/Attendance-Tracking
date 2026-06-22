@@ -15,6 +15,22 @@ let connectionData = null;
 let summaryData = [];
 let logsData = [];
 
+// App readiness and Splash screen tracking
+let isAppReady = false;
+let isTimerDone = false;
+
+function checkAndHideSplash() {
+    if (isAppReady && isTimerDone) {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => {
+                splash.style.visibility = 'hidden';
+            }, 500);
+        }
+    }
+}
+
 // OTP States
 let otpSourceScreen = 'login';
 let otpEmail = '';
@@ -37,13 +53,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Splash screen timer
     setTimeout(() => {
-        const splash = document.getElementById('splashScreen');
-        if (splash) {
-            splash.style.opacity = '0';
-            setTimeout(() => {
-                splash.style.visibility = 'hidden';
-            }, 500);
-        }
+        isTimerDone = true;
+        checkAndHideSplash();
     }, 1500);
 
     // Verify Supabase Config is present
@@ -114,6 +125,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         } else {
             // User logged out
             showWelcomeScreen();
+            isAppReady = true;
+            checkAndHideSplash();
         }
     });
 });
@@ -124,6 +137,8 @@ function showWelcomeScreen() {
     document.getElementById('ob').style.flexDirection = 'column';
     document.getElementById('app').style.display = 'none';
     showAuthTab('welcome');
+    isAppReady = true;
+    checkAndHideSplash();
 }
 
 function showAuthTab(tab) {
@@ -350,16 +365,18 @@ async function checkConnectionAndLoadData() {
             
             // Refresh local state lists
             await refreshData();
+        }
+        isAppReady = true;
+        checkAndHideSplash();
     } catch (err) {
         console.error("Error checking connection status:", err);
-        toast("⚠️ Session error. Redirecting to login...");
+        toast("⚠️ Connection error. Please check your network.");
         
-        try {
-            await supabaseClient.auth.signOut();
-        } catch (signOutErr) {
-            console.error("Sign out failed:", signOutErr);
-        }
-        showWelcomeScreen();
+        // Show retry button on splash screen instead of logging them out
+        const loader = document.querySelector('.splash-loader');
+        if (loader) loader.style.display = 'none';
+        const retryBox = document.getElementById('splashRetry');
+        if (retryBox) retryBox.style.display = 'block';
     }
 }
 
