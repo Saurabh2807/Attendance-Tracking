@@ -56,6 +56,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Initialize Supabase
     try {
         supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        
+        // Clean auth fragments from URL to prevent bookmarking sensitive/expired tokens
+        if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
+            setTimeout(() => {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            }, 100);
+        }
     } catch (err) {
         console.error("Supabase initialization error:", err);
         toast("❌ Failed to initialize Supabase. Check config settings.");
@@ -343,10 +350,16 @@ async function checkConnectionAndLoadData() {
             
             // Refresh local state lists
             await refreshData();
-        }
     } catch (err) {
         console.error("Error checking connection status:", err);
-        toast("⚠️ Error loading account configuration");
+        toast("⚠️ Session error. Redirecting to login...");
+        
+        try {
+            await supabaseClient.auth.signOut();
+        } catch (signOutErr) {
+            console.error("Sign out failed:", signOutErr);
+        }
+        showWelcomeScreen();
     }
 }
 
