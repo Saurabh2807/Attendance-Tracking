@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendease-cache-v1';
+const CACHE_NAME = 'attendease-cache-v2';
 const ASSETS = [
     './',
     './index.html',
@@ -14,7 +14,9 @@ const ASSETS = [
     './icons/icon-192.png',
     './icons/icon-384.png',
     './icons/icon-512.png',
-    './icons/apple-touch-icon.png'
+    './icons/apple-touch-icon.png',
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap'
 ];
 
 // Install Event - Pre-cache static assets
@@ -53,9 +55,13 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(event.request.url);
 
-    // Only cache requests matching our own origin (static local assets)
+    // Only cache requests matching our own origin (static local assets) or our trusted CDNs
     // Do NOT cache database calls (Supabase), sync service requests (Railway), or auth requests
-    if (url.origin !== self.location.origin) {
+    const isTrustedCDN = url.origin === 'https://cdn.jsdelivr.net' || 
+                         url.origin === 'https://fonts.googleapis.com' || 
+                         url.origin === 'https://fonts.gstatic.com';
+
+    if (url.origin !== self.location.origin && !isTrustedCDN) {
         return;
     }
 

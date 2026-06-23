@@ -356,6 +356,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     try {
         pendingInitStep = 'init-supabase-client';
         console.log("[BOOT] Initializing Supabase client...");
+        if (typeof supabase === 'undefined') {
+            throw new Error("Supabase SDK is not loaded. Please check your internet connection.");
+        }
         supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         console.log("[BOOT] Supabase client initialized.");
         
@@ -543,6 +546,10 @@ async function handleSendSignUpOtp() {
     otpEmail = email;
     otpName = name;
 
+    if (!supabaseClient) {
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        return;
+    }
     toast("⏳ Sending verification code...");
     const { error } = await supabaseClient.auth.signInWithOtp({
         email,
@@ -581,6 +588,10 @@ async function handleSendLoginOtp() {
     otpEmail = email;
     otpName = '';
 
+    if (!supabaseClient) {
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        return;
+    }
     toast("⏳ Sending verification code...");
     const { error } = await supabaseClient.auth.signInWithOtp({
         email
@@ -626,6 +637,10 @@ async function handleVerifyOtp() {
         return;
     }
 
+    if (!supabaseClient) {
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        return;
+    }
     toast("⏳ Verifying code...");
     const { data, error } = await supabaseClient.auth.verifyOtp({
         email: otpEmail,
@@ -647,6 +662,10 @@ async function handleVerifyOtp() {
 async function handleResendOtp() {
     if (!otpEmail) return;
     
+    if (!supabaseClient) {
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        return;
+    }
     toast("⏳ Resending code...");
     
     const options = {};
@@ -677,6 +696,10 @@ function cancelOtpFlow() {
 }
 
 async function handleSignOut() {
+    if (!supabaseClient) {
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        return;
+    }
     if (confirm("Logout of your account?")) {
         const { error } = await supabaseClient.auth.signOut();
         if (error) {
@@ -689,6 +712,10 @@ async function handleSignOut() {
 
 async function handleGoogleSignIn() {
     toast("⏳ Connecting to Google...");
+    if (!supabaseClient) {
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        return;
+    }
     try {
         const redirectUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? window.location.origin + window.location.pathname
@@ -714,6 +741,9 @@ async function checkConnectionAndLoadData(preloadedConn = null) {
         let conn = preloadedConn;
         if (!conn) {
             console.log('[CONNECTION] Checking AccSoft connection');
+            if (!supabaseClient) {
+                throw new Error("Supabase SDK is not initialized.");
+            }
             // Fetch connection record
             const { data, error } = await supabaseClient
                 .from('accsoft_connections')
@@ -795,6 +825,11 @@ async function handleConnectAccsoft() {
 
     toast("⏳ Connecting account (Verifying credentials)...");
     
+    if (!supabaseClient) {
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        if (connectLoading) connectLoading.style.display = 'none';
+        return;
+    }
     // Retrieve user session token
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
@@ -854,6 +889,10 @@ async function handleDisconnectAccsoft() {
         return;
     }
 
+    if (!supabaseClient) {
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        return;
+    }
     toast("⏳ Disconnecting...");
     try {
         const { error } = await supabaseClient
@@ -916,6 +955,13 @@ async function triggerSyncNow() {
         }
     }, 75000);
 
+    if (!supabaseClient) {
+        clearTimeout(syncTimeout);
+        isSyncFinished = true;
+        modal.classList.add('hidden');
+        toast("⚠️ Supabase service is unavailable. Please check your connection.");
+        return;
+    }
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
         clearTimeout(syncTimeout);
@@ -1038,6 +1084,9 @@ async function triggerSyncNow() {
 async function refreshData() {
     try {
         console.log("[DASHBOARD] Refreshing local cached attendance data from database...");
+        if (!supabaseClient) {
+            throw new Error("Supabase SDK is not initialized.");
+        }
         
         // Fetch connection record again
         console.log('[CONNECTION] Checking AccSoft connection');
