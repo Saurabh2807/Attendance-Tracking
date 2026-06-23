@@ -619,7 +619,7 @@ async function handleGoogleSignIn() {
 async function checkConnectionAndLoadData() {
     console.log('[PROFILE] Loading profile');
     try {
-        console.log("[PROFILE] Checking user connection status in database...");
+        console.log('[CONNECTION] Checking AccSoft connection');
         // Fetch connection record
         const { data: conn, error } = await supabaseClient
             .from('accsoft_connections')
@@ -628,12 +628,13 @@ async function checkConnectionAndLoadData() {
             .maybeSingle();
 
         if (error) {
-            console.error("[PROFILE] Database query error for accsoft_connections:", error);
+            console.error('[CONNECTION ERROR]', error);
             throw error;
         }
 
+        console.log('[CONNECTION] Result', conn);
         connectionData = conn;
-        console.log('[PROFILE] Profile loaded');
+        console.log('[PROFILE] Loaded', conn);
 
         if (!conn) {
             console.log("[PROFILE] User has no AccSoft connection record. Redirecting to connect screen.");
@@ -661,7 +662,7 @@ async function checkConnectionAndLoadData() {
         isAppReady = true;
         checkAndHideSplash();
     } catch (err) {
-        console.error("[PROFILE] Error checking connection status:", err);
+        console.error('[PROFILE ERROR]', err);
         if (currentUser) {
             // Bypass login redirect since session exists
             console.log("[AUTH] Redirecting to dashboard");
@@ -761,7 +762,9 @@ async function handleDisconnectAccsoft() {
 }
 
 // ===== ATTENDANCE MANUAL SYNC PIPELINE =====
+// ===== ATTENDANCE MANUAL SYNC PIPELINE =====
 async function triggerSyncNow() {
+    console.log('[SYNC] Started');
     const modal = document.getElementById('syncingModal');
     const stepLogin = document.getElementById('syncStepLogin');
     const stepFetch = document.getElementById('syncStepFetch');
@@ -780,8 +783,20 @@ async function triggerSyncNow() {
     bar.style.width = '0%';
     text.textContent = '0 / 3';
 
+    let isSyncFinished = false;
+    const syncTimeout = setTimeout(() => {
+        if (!isSyncFinished) {
+            console.error('[SYNC] Timeout');
+            modal.classList.add('hidden');
+            toast("Sync timed out. Please try again.");
+            isSyncFinished = true;
+        }
+    }, 30000);
+
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
+        clearTimeout(syncTimeout);
+        isSyncFinished = true;
         modal.classList.add('hidden');
         toast("Session expired. Please log in again.");
         return;
@@ -789,13 +804,16 @@ async function triggerSyncNow() {
 
     // Step 1: Login progress transition
     setTimeout(() => {
-        stepLogin.textContent = '🔄 Logging in to AccSoft...';
-        stepLogin.style.color = 'var(--yellow)';
-        bar.style.width = '15%';
-        text.textContent = '0.5 / 3';
+        if (!isSyncFinished) {
+            stepLogin.textContent = '🔄 Logging in to AccSoft...';
+            stepLogin.style.color = 'var(--yellow)';
+            bar.style.width = '15%';
+            text.textContent = '0.5 / 3';
+        }
     }, 400);
 
     try {
+        console.log('[SYNC] Calling sync service');
         // Trigger manual sync API
         const response = await fetch(`${window.SYNC_SERVICE_URL}/sync-attendance`, {
             method: 'POST',
@@ -804,11 +822,16 @@ async function triggerSyncNow() {
             }
         });
 
+        console.log('[SYNC] Response received');
         const resData = await response.json();
         
         if (!response.ok) {
             throw new Error(resData.error || 'Synchronization failed');
         }
+
+        if (isSyncFinished) return;
+        clearTimeout(syncTimeout);
+        isSyncFinished = true;
 
         // Fast forward animations to success state
         stepLogin.textContent = '✅ Logged in to AccSoft';
@@ -829,8 +852,13 @@ async function triggerSyncNow() {
             toast("✅ Sync completed successfully!");
             refreshData();
         }, 1000);
+        console.log('[SYNC] Finished');
 
     } catch (err) {
+        if (isSyncFinished) return;
+        clearTimeout(syncTimeout);
+        isSyncFinished = true;
+
         console.error("Sync failed:", err);
         modal.classList.add('hidden');
         toast(`❌ ${err.message}`);
@@ -845,13 +873,18 @@ async function refreshData() {
         console.log("[DASHBOARD] Refreshing local cached attendance data from database...");
         
         // Fetch connection record again
+        console.log('[CONNECTION] Checking AccSoft connection');
         const { data: conn, error: connErr } = await supabaseClient
             .from('accsoft_connections')
             .select('*')
             .eq('user_id', currentUser.id)
             .single();
 
-        if (connErr) throw connErr;
+        if (connErr) {
+            console.error('[CONNECTION ERROR]', connErr);
+            throw connErr;
+        }
+        console.log('[CONNECTION] Result', conn);
         connectionData = conn;
 
         // Update welcome card subtext (Last Sync time)
@@ -866,16 +899,22 @@ async function refreshData() {
         }
 
         // Fetch Summary
+        console.log('[SUMMARY] Loading attendance summary');
         const { data: summaries, error: sumErr } = await supabaseClient
             .from('attendance_summary')
             .select('*')
             .eq('user_id', currentUser.id)
             .order('subject_name');
 
-        if (sumErr) throw sumErr;
+        if (sumErr) {
+            console.error('[SUMMARY ERROR]', sumErr);
+            throw sumErr;
+        }
+        console.log('[SUMMARY] Count', summaries?.length);
         summaryData = summaries || [];
 
         // Fetch logs
+        console.log('[LOGS] Loading attendance logs');
         const { data: logs, error: logsErr } = await supabaseClient
             .from('attendance_logs')
             .select('*')
@@ -883,7 +922,11 @@ async function refreshData() {
             .order('attendance_date', { ascending: false })
             .order('period_no', { ascending: true });
 
-        if (logsErr) throw logsErr;
+        if (logsErr) {
+            console.error('[LOGS ERROR]', logsErr);
+            throw logsErr;
+        }
+        console.log('[LOGS] Count', logs?.length);
         logsData = logs || [];
 
         // Render UI panels
@@ -900,6 +943,9 @@ async function refreshData() {
 
     } catch (err) {
         console.error("[DASHBOARD] Data refresh failed:", err);
+        console.error('[CONNECTION ERROR]', err);
+        console.error('[SUMMARY ERROR]', err);
+        console.error('[LOGS ERROR]', err);
         toast("⚠️ Failed to load attendance data. Offline mode.");
         
         // Render dashboard with empty/offline states instead of throwing
