@@ -12,6 +12,7 @@ const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
+const activeSyncs = new Set();
 app.use(cors());
 app.use(express.json());
 
@@ -423,6 +424,13 @@ app.post('/connect-accsoft', verifyUserToken, async (req, res) => {
 app.post('/sync-attendance', verifyUserToken, async (req, res) => {
     console.log(`Starting attendance sync for user: ${req.user.id}`);
 
+    if (activeSyncs.has(req.user.id)) {
+        console.warn(`[SYNC] Sync already in progress for user: ${req.user.id}`);
+        return res.status(409).json({ error: 'A sync is already in progress. Please wait.' });
+    }
+
+    activeSyncs.add(req.user.id);
+
     try {
         // Step 1: Fetch connection details
         const { data: conn, error: connErr } = await req.supabase
@@ -478,15 +486,14 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
                 throw delSumErr;
             }
 
-            const { data: sumResult, error: sumErr } = await req.supabase
+            const { error: sumErr } = await req.supabase
                 .from('attendance_summary')
-                .insert(summariesToInsert)
-                .select();
+                .insert(summariesToInsert);
             if (sumErr) {
                 console.error(`[DEBUG_SYNC] Full Supabase error response for attendance_summary:`, JSON.stringify(sumErr, null, 2));
                 throw sumErr;
             }
-            console.log(`[DEBUG_SYNC] Supabase attendance_summary write success. Rows created: ${sumResult ? sumResult.length : 0}`);
+            console.log(`[DEBUG_SYNC] Supabase attendance_summary write success. Rows created: ${summariesToInsert.length}`);
         }
 
         // Step 5: Write datewise logs
@@ -520,15 +527,14 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
                 throw delLogsErr;
             }
 
-            const { data: logsResult, error: logsErr } = await req.supabase
+            const { error: logsErr } = await req.supabase
                 .from('attendance_logs')
-                .insert(logsToInsert)
-                .select();
+                .insert(logsToInsert);
             if (logsErr) {
                 console.error(`[DEBUG_SYNC] Full Supabase error response for attendance_logs:`, JSON.stringify(logsErr, null, 2));
                 throw logsErr;
             }
-            console.log(`[DEBUG_SYNC] Supabase attendance_logs write success. Rows created: ${logsResult ? logsResult.length : 0}`);
+            console.log(`[DEBUG_SYNC] Supabase attendance_logs write success. Rows created: ${logsToInsert.length}`);
         }
 
         // Step 6: Log SUCCESS state
@@ -552,16 +558,19 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
         const errMsg = err.message || 'LOGIN_FAILED';
         console.error(`Attendance sync failed for ${req.user.id}:`, err);
 
-        // Update database with sync error status
-        await req.supabase
-            .from('accsoft_connections')
-            .update({
-                last_sync_at: new Date().toISOString(),
-                last_sync_status: errMsg,
-                last_sync_message: `Sync failed: ${errMsg}`
-            })
-            .eq('user_id', req.user.id)
-            .select(); // execute update
+        try {
+            // Update database with sync error status
+            await req.supabase
+                .from('accsoft_connections')
+                .update({
+                    last_sync_at: new Date().toISOString(),
+                    last_sync_status: errMsg,
+                    last_sync_message: `Sync failed: ${errMsg}`
+                })
+                .eq('user_id', req.user.id);
+        } catch (dbUpdateErr) {
+            console.error(`Failed to update db connection status:`, dbUpdateErr);
+        }
 
         const statusMap = {
             'INVALID_CREDENTIALS': 401,
@@ -571,6 +580,8 @@ app.post('/sync-attendance', verifyUserToken, async (req, res) => {
         };
         const status = statusMap[errMsg] || 400;
         res.status(status).json({ error: `Sync failed: ${errMsg}` });
+    } finally {
+        activeSyncs.delete(req.user.id);
     }
 });
 

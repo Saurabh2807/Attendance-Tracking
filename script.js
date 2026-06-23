@@ -21,6 +21,7 @@ let isTimerDone = false;
 let isInitializing = false;
 let processedUserId = undefined;
 let pendingInitStep = 'none';
+let isSyncInProgress = false;
 
 function getCachedUser() {
     try {
@@ -922,6 +923,11 @@ async function handleDisconnectAccsoft() {
 // ===== ATTENDANCE MANUAL SYNC PIPELINE =====
 // ===== ATTENDANCE MANUAL SYNC PIPELINE =====
 async function triggerSyncNow() {
+    if (isSyncInProgress) {
+        console.log('[SYNC] Blocked: Sync already in progress.');
+        return;
+    }
+    isSyncInProgress = true;
     console.log('[SYNC] Started');
     const modal = document.getElementById('syncingModal');
     const stepLogin = document.getElementById('syncStepLogin');
@@ -944,20 +950,22 @@ async function triggerSyncNow() {
     let isSyncFinished = false;
     const progressIntervals = [];
 
-    // Timeout guard at 75 seconds (helps wake up cold containers + allows slow scrapers to resolve)
+    // Timeout guard at 120 seconds (helps wake up cold containers + allows slow scrapers to resolve)
     const syncTimeout = setTimeout(() => {
         if (!isSyncFinished) {
             console.error('[SYNC] Timeout');
             modal.classList.add('hidden');
             toast("Sync timed out. Please try again.");
             isSyncFinished = true;
+            isSyncInProgress = false; // Reset lock
             progressIntervals.forEach(clearTimeout);
         }
-    }, 75000);
+    }, 120000);
 
     if (!supabaseClient) {
         clearTimeout(syncTimeout);
         isSyncFinished = true;
+        isSyncInProgress = false; // Reset lock
         modal.classList.add('hidden');
         toast("⚠️ Supabase service is unavailable. Please check your connection.");
         return;
@@ -966,6 +974,7 @@ async function triggerSyncNow() {
     if (!session) {
         clearTimeout(syncTimeout);
         isSyncFinished = true;
+        isSyncInProgress = false; // Reset lock
         modal.classList.add('hidden');
         toast("Session expired. Please log in again.");
         return;
@@ -1063,6 +1072,7 @@ async function triggerSyncNow() {
             modal.classList.add('hidden');
             toast("✅ Sync completed successfully!");
             refreshData();
+            isSyncInProgress = false; // Reset lock
         }, 1000);
         console.log('[SYNC] Finished');
 
@@ -1071,6 +1081,7 @@ async function triggerSyncNow() {
         clearTimeout(syncTimeout);
         progressIntervals.forEach(clearTimeout);
         isSyncFinished = true;
+        isSyncInProgress = false; // Reset lock
 
         console.error("Sync failed:", err);
         modal.classList.add('hidden');
