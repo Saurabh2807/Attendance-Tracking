@@ -708,25 +708,33 @@ async function handleGoogleSignIn() {
 
 // ===== ACCSOFT PORTAL LOGINS =====
 // ===== ACCSOFT PORTAL LOGINS =====
-async function checkConnectionAndLoadData() {
+async function checkConnectionAndLoadData(preloadedConn = null) {
     console.log('[PROFILE] Loading profile');
     try {
-        console.log('[CONNECTION] Checking AccSoft connection');
-        // Fetch connection record
-        const { data: conn, error } = await supabaseClient
-            .from('accsoft_connections')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .maybeSingle();
+        let conn = preloadedConn;
+        if (!conn) {
+            console.log('[CONNECTION] Checking AccSoft connection');
+            // Fetch connection record
+            const { data, error } = await supabaseClient
+                .from('accsoft_connections')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .maybeSingle();
 
-        if (error) {
-            console.error('[CONNECTION ERROR]', error);
-            throw error;
+            if (error) {
+                console.error('[CONNECTION ERROR]', error);
+                throw error;
+            }
+            conn = data;
         }
 
         console.log('[CONNECTION] Result', conn);
         connectionData = conn;
         console.log('[PROFILE] Loaded', conn);
+
+        if (conn && currentUser) {
+            saveCachedData(currentUser.id);
+        }
 
         if (!conn) {
             console.log("[PROFILE] User has no AccSoft connection record. Redirecting to connect screen.");
@@ -816,8 +824,17 @@ async function handleConnectAccsoft() {
         // Hide loader
         if (connectLoading) connectLoading.style.display = 'none';
         
+        // Construct the connection object directly to bypass replication race condition
+        const connObj = {
+            user_id: session.user.id,
+            enrollment_no: enroll,
+            last_sync_at: new Date().toISOString(),
+            last_sync_status: 'SUCCESS',
+            last_sync_message: 'Successfully connected and verified account.'
+        };
+        
         // Refresh connection details locally and load dashboard directly
-        await checkConnectionAndLoadData();
+        await checkConnectionAndLoadData(connObj);
 
     } catch (err) {
         if (connectLoading) connectLoading.style.display = 'none';
@@ -976,18 +993,25 @@ async function refreshData() {
         
         // Fetch connection record again
         console.log('[CONNECTION] Checking AccSoft connection');
-        const { data: conn, error: connErr } = await supabaseClient
-            .from('accsoft_connections')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .single();
+        try {
+            const { data: conn, error: connErr } = await supabaseClient
+                .from('accsoft_connections')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .single();
 
-        if (connErr) {
-            console.error('[CONNECTION ERROR]', connErr);
-            throw connErr;
+            if (connErr) {
+                console.error('[CONNECTION ERROR]', connErr);
+                throw connErr;
+            }
+            console.log('[CONNECTION] Result', conn);
+            connectionData = conn;
+        } catch (dbErr) {
+            console.warn("[DASHBOARD] Could not query latest connection details from DB, using fallback memory connectionData:", dbErr);
+            if (!connectionData) {
+                throw dbErr;
+            }
         }
-        console.log('[CONNECTION] Result', conn);
-        connectionData = conn;
 
         // Update welcome card subtext (Last Sync time)
         const lastSyncEl = document.getElementById('headerLastSync');
