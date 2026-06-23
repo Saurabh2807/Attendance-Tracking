@@ -18,9 +18,13 @@ let logsData = [];
 // App readiness and Splash screen tracking
 let isAppReady = false;
 let isTimerDone = false;
+let isInitializing = false;
+let processedUserId = undefined;
+let pendingInitStep = 'none';
 
 function checkAndHideSplash() {
     if (isAppReady && isTimerDone) {
+        console.log("[SPLASH] Hiding splash screen.");
         const splash = document.getElementById('splashScreen');
         if (splash) {
             splash.style.opacity = '0';
@@ -28,6 +32,71 @@ function checkAndHideSplash() {
                 splash.style.visibility = 'hidden';
             }, 500);
         }
+    }
+}
+
+// Centralized initialization failure helper
+function handleInitializationFailure(err) {
+    console.error(`[BOOT] Initialization failed at step: ${pendingInitStep}. Error:`, err);
+    
+    isInitializing = false;
+    isAppReady = true;
+    isTimerDone = true;
+    checkAndHideSplash();
+    
+    // Clear display blocks for app view and route back to login screen safely
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.style.display = 'none';
+    const obEl = document.getElementById('ob');
+    if (obEl) {
+        obEl.style.display = 'flex';
+        obEl.style.flexDirection = 'column';
+    }
+    showAuthTab('login');
+    
+    toast("⚠️ Connection error or session expired. Please log in again.");
+}
+
+// Unified session state handler with idempotency guard
+async function handleSessionState(session) {
+    const userId = session && session.user ? session.user.id : null;
+    
+    if (userId === processedUserId) {
+        console.log(`[SESSION] User ID ${userId || 'guest'} is already processed. Skipping duplicate handler.`);
+        return;
+    }
+    
+    processedUserId = userId;
+    currentUser = session ? session.user : null;
+    
+    console.log(`[SESSION] Processing state for user ID: ${userId || 'guest'}`);
+    
+    if (currentUser) {
+        if (isInitializing) {
+            console.log("[SESSION] Already processing initial boot check. Skipping nested load.");
+            return;
+        }
+        isInitializing = true;
+        
+        try {
+            pendingInitStep = 'load-user-profile';
+            await checkConnectionAndLoadData();
+            pendingInitStep = 'complete';
+        } catch (err) {
+            console.error("[SESSION] Error during user profile or database loading:", err);
+            handleInitializationFailure(err);
+        } finally {
+            isInitializing = false;
+        }
+    } else {
+        console.log("[SESSION] No active session found. Routing to Login Screen.");
+        pendingInitStep = 'route-to-welcome';
+        showWelcomeScreen();
+        // Force splash screen to hide quickly on welcome/login routing
+        isAppReady = true;
+        isTimerDone = true;
+        checkAndHideSplash();
+        pendingInitStep = 'complete';
     }
 }
 
@@ -43,22 +112,42 @@ const DNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', async () => {
+    pendingInitStep = 'check-supabase-config';
+    console.log("[BOOT] DOMContentLoaded event fired.");
+    
     // Light/Dark Theme Restore
-    const isLight = localStorage.getItem('ae_theme') === 'lm';
-    if (isLight) {
-        document.body.classList.add('lm');
+    try {
+        const isLight = localStorage.getItem('ae_theme') === 'lm';
+        if (isLight) {
+            document.body.classList.add('lm');
+        }
+        const checkbox = document.getElementById('themeBtn');
+        if (checkbox) checkbox.checked = isLight;
+        console.log("[BOOT] Theme loaded.");
+    } catch (e) {
+        console.error("[BOOT] Failed to restore theme preference:", e);
     }
-    const checkbox = document.getElementById('themeBtn');
-    if (checkbox) checkbox.checked = isLight;
 
-    // Splash screen timer
+    // Splash screen minimum timer (1.5s)
+    console.log("[SPLASH] Minimum timer started (1.5s).");
     setTimeout(() => {
+        console.log("[SPLASH] Minimum timer completed.");
         isTimerDone = true;
         checkAndHideSplash();
     }, 1500);
 
+    // Splash screen guaranteed timeout safety net (3s)
+    console.log("[SPLASH] Safety timeout started (3s).");
+    setTimeout(() => {
+        if (!isAppReady) {
+            console.error(`[SPLASH] Timeout triggered. Pending Step: ${pendingInitStep}`);
+            handleInitializationFailure(new Error(`Startup timed out at step: ${pendingInitStep}`));
+        }
+    }, 3000);
+
     // Verify Supabase Config is present
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+        console.error("[BOOT] Supabase configuration credentials missing in config.js!");
         toast("⚠️ Supabase config.js parameters missing!");
         showWelcomeScreen();
         return;
@@ -66,7 +155,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize Supabase
     try {
+        pendingInitStep = 'init-supabase-client';
+        console.log("[BOOT] Initializing Supabase client...");
         supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        console.log("[BOOT] Supabase client initialized.");
         
         // Clean auth fragments from URL to prevent bookmarking sensitive/expired tokens
         if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
@@ -75,60 +167,88 @@ window.addEventListener('DOMContentLoaded', async () => {
             }, 100);
         }
     } catch (err) {
-        console.error("Supabase initialization error:", err);
-        toast("❌ Failed to initialize Supabase. Check config settings.");
+        console.error("[BOOT] Supabase client initialization failed:", err);
+        handleInitializationFailure(err);
+        return;
     }
 
-    // OTP inputs shift focus automatically
-    const otpBoxes = document.querySelectorAll('.otp-box');
-    const hiddenOtpInput = document.getElementById('otpCode');
+    // OTP inputs focus shift handlers
+    try {
+        const otpBoxes = document.querySelectorAll('.otp-box');
+        const hiddenOtpInput = document.getElementById('otpCode');
 
-    otpBoxes.forEach((box, idx) => {
-        box.addEventListener('input', (e) => {
-            if (box.value.length === 1 && idx < otpBoxes.length - 1) {
-                otpBoxes[idx + 1].focus();
-            }
-            updateHiddenOtpValue();
-        });
-
-        box.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace') {
-                if (box.value.length === 0 && idx > 0) {
-                    otpBoxes[idx - 1].focus();
-                    otpBoxes[idx - 1].value = '';
-                } else {
-                    box.value = '';
+        otpBoxes.forEach((box, idx) => {
+            box.addEventListener('input', (e) => {
+                if (box.value.length === 1 && idx < otpBoxes.length - 1) {
+                    otpBoxes[idx + 1].focus();
                 }
                 updateHiddenOtpValue();
-            }
-        });
-    });
+            });
 
-    function updateHiddenOtpValue() {
-        let code = '';
-        otpBoxes.forEach(b => {
-            code += b.value;
+            box.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace') {
+                    if (box.value.length === 0 && idx > 0) {
+                        otpBoxes[idx - 1].focus();
+                        otpBoxes[idx - 1].value = '';
+                    } else {
+                        box.value = '';
+                    }
+                    updateHiddenOtpValue();
+                }
+            });
         });
-        if (hiddenOtpInput) {
-            hiddenOtpInput.value = code;
+
+        function updateHiddenOtpValue() {
+            let code = '';
+            otpBoxes.forEach(b => {
+                code += b.value;
+            });
+            if (hiddenOtpInput) {
+                hiddenOtpInput.value = code;
+            }
         }
+    } catch (e) {
+        console.error("[BOOT] Error registering OTP focus handlers:", e);
     }
 
-    // Set up auth listener
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-        console.log("Auth State Changed:", event, session);
-        currentUser = session ? session.user : null;
-        
-        if (currentUser) {
-            // User logged in
-            await checkConnectionAndLoadData();
-        } else {
-            // User logged out
-            showWelcomeScreen();
-            isAppReady = true;
-            checkAndHideSplash();
+    // Setup auth state change listener
+    try {
+        pendingInitStep = 'restore-session';
+        console.log("[AUTH] Setting up onAuthStateChange listener...");
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            console.log(`[AUTH] Auth state changed event received: ${event}`, session);
+            try {
+                await handleSessionState(session);
+            } catch (err) {
+                console.error("[AUTH] Error processing auth state change event:", err);
+                handleInitializationFailure(err);
+            }
+        });
+    } catch (err) {
+        console.error("[AUTH] Failed to register onAuthStateChange listener:", err);
+        handleInitializationFailure(err);
+        return;
+    }
+
+    // Explicitly call getSession() to handle fast session restoration
+    try {
+        console.log("[SESSION] Verifying session via getSession()...");
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        if (error) {
+            console.error("[SESSION] getSession() call returned error:", error);
+            throw error;
         }
-    });
+        console.log("[SESSION] getSession() completed. Session found:", !!session);
+        try {
+            await handleSessionState(session);
+        } catch (err) {
+            console.error("[SESSION] Error handling manual getSession state:", err);
+            handleInitializationFailure(err);
+        }
+    } catch (err) {
+        console.error("[SESSION] Failed to query session via getSession():", err);
+        handleInitializationFailure(err);
+    }
 });
 
 // ===== AUTHENTICATION LIFE CYCLE =====
@@ -338,8 +458,10 @@ async function handleGoogleSignIn() {
 }
 
 // ===== ACCSOFT PORTAL LOGINS =====
+// ===== ACCSOFT PORTAL LOGINS =====
 async function checkConnectionAndLoadData() {
     try {
+        console.log("[PROFILE] Checking user connection status in database...");
         // Fetch connection record
         const { data: conn, error } = await supabaseClient
             .from('accsoft_connections')
@@ -347,15 +469,20 @@ async function checkConnectionAndLoadData() {
             .eq('user_id', currentUser.id)
             .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+            console.error("[PROFILE] Database query error for accsoft_connections:", error);
+            throw error;
+        }
 
         connectionData = conn;
 
         if (!conn) {
-            // Not connected to Accsoft
+            console.log("[PROFILE] User has no AccSoft connection record. Redirecting to connect screen.");
             showAuthTab('connect');
+            isAppReady = true;
+            checkAndHideSplash();
         } else {
-            // Account is connected - transition to main application layout
+            console.log("[PROFILE] User has AccSoft connection. Loading dashboard...");
             document.getElementById('ob').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
             
@@ -364,19 +491,25 @@ async function checkConnectionAndLoadData() {
             document.getElementById('headerWelcome').textContent = `Hi, ${name} 👋`;
             
             // Refresh local state lists
+            pendingInitStep = 'load-attendance-data';
             await refreshData();
         }
         isAppReady = true;
         checkAndHideSplash();
     } catch (err) {
-        console.error("Error checking connection status:", err);
-        toast("⚠️ Connection error. Please check your network.");
-        
-        // Show retry button on splash screen instead of logging them out
-        const loader = document.querySelector('.splash-loader');
-        if (loader) loader.style.display = 'none';
-        const retryBox = document.getElementById('splashRetry');
-        if (retryBox) retryBox.style.display = 'block';
+        console.error("[PROFILE] Error checking connection status:", err);
+        if (!isAppReady) {
+            // Fail-safe redirect during initial load sequence
+            handleInitializationFailure(err);
+        } else {
+            toast("⚠️ Connection error. Please check your network.");
+            
+            // Show retry button on splash screen instead of logging them out
+            const loader = document.querySelector('.splash-loader');
+            if (loader) loader.style.display = 'none';
+            const retryBox = document.getElementById('splashRetry');
+            if (retryBox) retryBox.style.display = 'block';
+        }
     }
 }
 
@@ -570,15 +703,19 @@ async function triggerSyncNow() {
 }
 
 // ===== DATABASE REFRESH & STATE MANAGEMENT =====
+// ===== DATABASE REFRESH & STATE MANAGEMENT =====
 async function refreshData() {
     try {
+        console.log("[DASHBOARD] Refreshing local cached attendance data from database...");
+        
         // Fetch connection record again
-        const { data: conn } = await supabaseClient
+        const { data: conn, error: connErr } = await supabaseClient
             .from('accsoft_connections')
             .select('*')
             .eq('user_id', currentUser.id)
             .single();
 
+        if (connErr) throw connErr;
         connectionData = conn;
 
         // Update welcome card subtext (Last Sync time)
@@ -593,25 +730,29 @@ async function refreshData() {
         }
 
         // Fetch Summary
-        const { data: summaries } = await supabaseClient
+        const { data: summaries, error: sumErr } = await supabaseClient
             .from('attendance_summary')
             .select('*')
             .eq('user_id', currentUser.id)
             .order('subject_name');
 
+        if (sumErr) throw sumErr;
         summaryData = summaries || [];
 
         // Fetch logs
-        const { data: logs } = await supabaseClient
+        const { data: logs, error: logsErr } = await supabaseClient
             .from('attendance_logs')
             .select('*')
             .eq('user_id', currentUser.id)
             .order('attendance_date', { ascending: false })
             .order('period_no', { ascending: true });
 
+        if (logsErr) throw logsErr;
         logsData = logs || [];
 
         // Render UI panels
+        pendingInitStep = 'render-dashboard';
+        console.log("[DASHBOARD] Rendering UI panels...");
         updateSyncStatusStrip();
         renderDashboard();
         renderSubjects();
@@ -619,10 +760,15 @@ async function refreshData() {
         renderHistory();
         renderInsights();
         renderSettingsPage();
+        console.log("[DASHBOARD] All UI elements successfully rendered.");
 
     } catch (err) {
-        console.error("Data refresh failed:", err);
+        console.error("[DASHBOARD] Data refresh failed:", err);
         toast("⚠️ Failed to load attendance data");
+        // Re-throw if in initial load so loader gets notified of the failure
+        if (!isAppReady) {
+            throw err;
+        }
     }
 }
 
