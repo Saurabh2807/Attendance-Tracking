@@ -197,19 +197,9 @@
                 <button class="btn btn-or" onclick="handleConnectAccsoft()" style="margin-top: 8px; margin-bottom: 16px;">Connect</button>
                 
                 <!-- Inline loading progress indicator -->
-                <div class="connect-loading-box" id="connectLoading">
-                    <div class="loading-step" id="connStepLogin">
-                        <span class="step-indicator">⏳</span>
-                        <span>Log in to AccSoft</span>
-                    </div>
-                    <div class="loading-step" id="connStepFetch">
-                        <span class="step-indicator">⏳</span>
-                        <span>Fetching Attendance</span>
-                    </div>
-                    <div class="loading-step" id="connStepSave">
-                        <span class="step-indicator">⏳</span>
-                        <span>Saving Records</span>
-                    </div>
+                <div class="connect-loading-box" id="connectLoading" style="display: none; align-items: center; justify-content: center; gap: 12px; padding: 16px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--card); margin-top: 16px;">
+                    <div class="spin-circle" style="width: 20px; height: 20px; border-width: 2.5px;"></div>
+                    <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-sec);">Connecting to AccSoft...</span>
                 </div>
 
                 <div style="text-align: center; margin-top: 24px; font-size: 0.7rem; color: var(--text-sec); font-weight: 500;">

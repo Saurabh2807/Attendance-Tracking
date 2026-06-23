@@ -690,23 +690,7 @@ async function handleConnectAccsoft() {
     }
 
     const connectLoading = document.getElementById('connectLoading');
-    const connStepLogin = document.getElementById('connStepLogin');
-    const connStepFetch = document.getElementById('connStepFetch');
-    const connStepSave = document.getElementById('connStepSave');
-
     if (connectLoading) connectLoading.style.display = 'flex';
-    if (connStepLogin) {
-        connStepLogin.className = 'loading-step active';
-        connStepLogin.querySelector('.step-indicator').innerHTML = '<div class="spin-circle"></div>';
-    }
-    if (connStepFetch) {
-        connStepFetch.className = 'loading-step';
-        connStepFetch.querySelector('.step-indicator').textContent = '⏳';
-    }
-    if (connStepSave) {
-        connStepSave.className = 'loading-step';
-        connStepSave.querySelector('.step-indicator').textContent = '⏳';
-    }
 
     toast("⏳ Connecting account (Verifying credentials)...");
     
@@ -734,30 +718,15 @@ async function handleConnectAccsoft() {
             throw new Error(resData.error || 'Connection failed');
         }
 
-        if (connStepLogin) {
-            connStepLogin.className = 'loading-step success';
-            connStepLogin.querySelector('.step-indicator').textContent = '✅';
-        }
-        if (connStepFetch) {
-            connStepFetch.className = 'loading-step success';
-            connStepFetch.querySelector('.step-indicator').textContent = '✅';
-        }
-        if (connStepSave) {
-            connStepSave.className = 'loading-step success';
-            connStepSave.querySelector('.step-indicator').textContent = '✅';
-        }
-
         toast("✅ Connected successfully!");
         
-        // Refresh connection details locally and trigger automated sync
+        // Hide loader
+        if (connectLoading) connectLoading.style.display = 'none';
+        
+        // Refresh connection details locally and load dashboard directly
         await checkConnectionAndLoadData();
-        await triggerSyncNow();
 
     } catch (err) {
-        if (connStepLogin) {
-            connStepLogin.className = 'loading-step failed';
-            connStepLogin.querySelector('.step-indicator').textContent = '❌';
-        }
         if (connectLoading) connectLoading.style.display = 'none';
         toast(`❌ ${err.message}`);
     }
@@ -1151,9 +1120,9 @@ function renderDashboard() {
             groupedLogs[dateStr].classes.push(l);
         });
 
-        // Get sorted dates (most recent first), take top 3 days
+        // Get sorted dates (most recent first)
         const sortedDates = Object.keys(groupedLogs).sort().reverse();
-        const topDates = sortedDates.slice(0, 3);
+        const topDates = sortedDates; // Show all days
 
         if (topDates.length === 0) {
             const emptyEl = document.createElement('div');
