@@ -903,14 +903,18 @@ async function triggerSyncNow() {
     text.textContent = '0 / 3';
 
     let isSyncFinished = false;
+    const progressIntervals = [];
+
+    // Timeout guard at 75 seconds (helps wake up cold containers + allows slow scrapers to resolve)
     const syncTimeout = setTimeout(() => {
         if (!isSyncFinished) {
             console.error('[SYNC] Timeout');
             modal.classList.add('hidden');
             toast("Sync timed out. Please try again.");
             isSyncFinished = true;
+            progressIntervals.forEach(clearTimeout);
         }
-    }, 30000);
+    }, 75000);
 
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
@@ -921,15 +925,57 @@ async function triggerSyncNow() {
         return;
     }
 
-    // Step 1: Login progress transition
-    setTimeout(() => {
-        if (!isSyncFinished) {
-            stepLogin.textContent = '🔄 Logging in to AccSoft...';
-            stepLogin.style.color = 'var(--yellow)';
-            bar.style.width = '15%';
-            text.textContent = '0.5 / 3';
-        }
-    }, 400);
+    // Helper to register timed progress updates
+    const addProgressStep = (delay, callback) => {
+        const timer = setTimeout(() => {
+            if (!isSyncFinished) {
+                callback();
+            }
+        }, delay);
+        progressIntervals.push(timer);
+    };
+
+    // Step 1: Logging in (0.4s)
+    addProgressStep(400, () => {
+        stepLogin.textContent = '🔄 Logging in to AccSoft...';
+        stepLogin.style.color = 'var(--yellow)';
+        bar.style.width = '15%';
+        text.textContent = '0.5 / 3';
+    });
+
+    // Step 2: Cold start wake up (10s)
+    addProgressStep(10000, () => {
+        stepLogin.textContent = '🔄 Accessing LNCT portal (Server waking up)...';
+        bar.style.width = '30%';
+        text.textContent = '1.0 / 3';
+    });
+
+    // Step 3: Fetching attendance data (20s)
+    addProgressStep(20000, () => {
+        stepLogin.textContent = '✅ Logged in to AccSoft';
+        stepLogin.style.color = 'var(--green)';
+        stepFetch.textContent = '🔄 Fetching attendance from portal...';
+        stepFetch.style.color = 'var(--yellow)';
+        bar.style.width = '50%';
+        text.textContent = '1.5 / 3';
+    });
+
+    // Step 4: Scraping taking longer (35s)
+    addProgressStep(35000, () => {
+        stepFetch.textContent = '🔄 Fetching attendance (Portal response is slow)...';
+        bar.style.width = '70%';
+        text.textContent = '2.0 / 3';
+    });
+
+    // Step 5: Saving to database (55s)
+    addProgressStep(55000, () => {
+        stepFetch.textContent = '✅ Fetching attendance data';
+        stepFetch.style.color = 'var(--green)';
+        stepSave.textContent = '🔄 Saving records to Supabase...';
+        stepSave.style.color = 'var(--yellow)';
+        bar.style.width = '85%';
+        text.textContent = '2.5 / 3';
+    });
 
     try {
         console.log('[SYNC] Calling sync service');
@@ -950,6 +996,7 @@ async function triggerSyncNow() {
 
         if (isSyncFinished) return;
         clearTimeout(syncTimeout);
+        progressIntervals.forEach(clearTimeout);
         isSyncFinished = true;
 
         // Fast forward animations to success state
@@ -976,6 +1023,7 @@ async function triggerSyncNow() {
     } catch (err) {
         if (isSyncFinished) return;
         clearTimeout(syncTimeout);
+        progressIntervals.forEach(clearTimeout);
         isSyncFinished = true;
 
         console.error("Sync failed:", err);
