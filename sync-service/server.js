@@ -593,6 +593,33 @@ app.get('/health', (req, res) => {
     });
 });
 
+app.get('/test-accsoft', async (req, res) => {
+    console.log("[DIAGNOSTIC] Testing connection to AccSoft from server...");
+    const startTime = Date.now();
+    try {
+        const testRes = await axios.get('https://portal.lnct.ac.in/Accsoft2/studentlogin.aspx', {
+            timeout: 10000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
+        res.json({
+            success: true,
+            status: testRes.status,
+            timeMs: Date.now() - startTime,
+            dataLength: testRes.data ? testRes.data.length : 0,
+            snippet: testRes.data ? testRes.data.substring(0, 200).replace(/\s+/g, ' ') : ''
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            timeMs: Date.now() - startTime,
+            message: err.message,
+            code: err.code
+        });
+    }
+});
+
 // Start Express Server
 app.listen(PORT, () => {
     console.log(`AttendEase Sync Service running on port ${PORT}`);
