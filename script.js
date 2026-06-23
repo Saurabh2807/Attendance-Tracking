@@ -893,11 +893,11 @@ async function triggerSyncNow() {
 
     // Reset Sync Progress UI
     modal.classList.remove('hidden');
-    stepLogin.textContent = '⏳ Log in to AccSoft';
+    stepLogin.textContent = '⏳ logging to accsoft';
     stepLogin.style.color = 'var(--text3)';
-    stepFetch.textContent = '⏳ Fetching attendance data';
+    stepFetch.textContent = '⏳ fetching attendance';
     stepFetch.style.color = 'var(--text3)';
-    stepSave.textContent = '⏳ Saving to database';
+    stepSave.textContent = '⏳ fetched saved to database';
     stepSave.style.color = 'var(--text3)';
     bar.style.width = '0%';
     text.textContent = '0 / 3';
@@ -937,7 +937,7 @@ async function triggerSyncNow() {
 
     // Step 1: Logging in (0.4s)
     addProgressStep(400, () => {
-        stepLogin.textContent = '🔄 Logging in to AccSoft...';
+        stepLogin.textContent = '🔄 logging to accsoft...';
         stepLogin.style.color = 'var(--yellow)';
         bar.style.width = '15%';
         text.textContent = '0.5 / 3';
@@ -945,16 +945,16 @@ async function triggerSyncNow() {
 
     // Step 2: Cold start wake up (10s)
     addProgressStep(10000, () => {
-        stepLogin.textContent = '🔄 Accessing LNCT portal (Server waking up)...';
+        stepLogin.textContent = '🔄 logging to accsoft...';
         bar.style.width = '30%';
         text.textContent = '1.0 / 3';
     });
 
     // Step 3: Fetching attendance data (20s)
     addProgressStep(20000, () => {
-        stepLogin.textContent = '✅ Logged in to AccSoft';
+        stepLogin.textContent = '✅ logging to accsoft';
         stepLogin.style.color = 'var(--green)';
-        stepFetch.textContent = '🔄 Fetching attendance from portal...';
+        stepFetch.textContent = '🔄 fetching attendance...';
         stepFetch.style.color = 'var(--yellow)';
         bar.style.width = '50%';
         text.textContent = '1.5 / 3';
@@ -962,16 +962,16 @@ async function triggerSyncNow() {
 
     // Step 4: Scraping taking longer (35s)
     addProgressStep(35000, () => {
-        stepFetch.textContent = '🔄 Fetching attendance (Portal response is slow)...';
+        stepFetch.textContent = '🔄 fetching attendance...';
         bar.style.width = '70%';
         text.textContent = '2.0 / 3';
     });
 
     // Step 5: Saving to database (55s)
     addProgressStep(55000, () => {
-        stepFetch.textContent = '✅ Fetching attendance data';
+        stepFetch.textContent = '✅ fetching attendance';
         stepFetch.style.color = 'var(--green)';
-        stepSave.textContent = '🔄 Saving records to Supabase...';
+        stepSave.textContent = '🔄 fetched saved to database...';
         stepSave.style.color = 'var(--yellow)';
         bar.style.width = '85%';
         text.textContent = '2.5 / 3';
@@ -1000,15 +1000,15 @@ async function triggerSyncNow() {
         isSyncFinished = true;
 
         // Fast forward animations to success state
-        stepLogin.textContent = '✅ Logged in to AccSoft';
+        stepLogin.textContent = '✅ logging to accsoft';
         stepLogin.style.color = 'var(--green)';
         bar.style.width = '33%';
         
-        stepFetch.textContent = '✅ Fetching attendance data';
+        stepFetch.textContent = '✅ fetching attendance';
         stepFetch.style.color = 'var(--green)';
         bar.style.width = '66%';
         
-        stepSave.textContent = '✅ Saving to database';
+        stepSave.textContent = '✅ fetched saved to database';
         stepSave.style.color = 'var(--green)';
         bar.style.width = '100%';
         text.textContent = '3 / 3';
