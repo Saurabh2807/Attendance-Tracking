@@ -802,7 +802,7 @@ function renderDashboard() {
     const fallbackBtn = document.getElementById('dashboardFallbackBtn');
     
     const statsContainer = document.getElementById('dashboardStats');
-    const subjList = document.getElementById('dashSubjectList');
+    const dailyLogsList = document.getElementById('dashDailyLogsList');
     
     // Check fallback state first
     if (!connectionData) {
@@ -956,31 +956,81 @@ function renderDashboard() {
         });
     }
 
-    // Render Quick Subject Overview
-    subjList.innerHTML = '';
-    summaryData.slice(0, 3).forEach(s => {
-        const percCol = s.percentage >= 75 ? 'var(--green)' : s.percentage >= 65 ? 'var(--orange)' : 'var(--red)';
-        const row = document.createElement('div');
-        row.className = 'subj-row';
-        row.onclick = () => showSubjectDetail(s.subject_name);
-        row.innerHTML = `
-            <div class="subj-row-top">
-                <div class="subj-row-info">
-                    <div class="subj-row-icon">📚</div>
-                    <div class="subj-row-details">
-                        <div class="subj-row-name">${s.subject_name}</div>
-                        <div class="subj-row-stats">Attended <span class="pres">${s.present}</span>/${s.held}</div>
+    // Render Daily logs grouped by date (most recent 3 days)
+    if (dailyLogsList) {
+        dailyLogsList.innerHTML = '';
+        
+        // Group logs by date
+        const groupedLogs = {};
+        logsData.forEach(l => {
+            const dateStr = l.attendance_date;
+            if (!groupedLogs[dateStr]) {
+                groupedLogs[dateStr] = { present: 0, absent: 0, classes: [] };
+            }
+            const isPresent = l.status === 'P' || l.status.toUpperCase() === 'PRESENT';
+            if (isPresent) {
+                groupedLogs[dateStr].present++;
+            } else {
+                groupedLogs[dateStr].absent++;
+            }
+            groupedLogs[dateStr].classes.push(l);
+        });
+
+        // Get sorted dates (most recent first), take top 3 days
+        const sortedDates = Object.keys(groupedLogs).sort().reverse();
+        const topDates = sortedDates.slice(0, 3);
+
+        if (topDates.length === 0) {
+            const emptyEl = document.createElement('div');
+            emptyEl.style.textAlign = 'center';
+            emptyEl.style.padding = '24px 16px';
+            emptyEl.style.color = 'var(--text-sec)';
+            emptyEl.style.fontSize = '0.8rem';
+            emptyEl.textContent = 'No attendance logs recorded yet.';
+            dailyLogsList.appendChild(emptyEl);
+        } else {
+            topDates.forEach(date => {
+                const dayData = groupedLogs[date];
+                
+                // Format date label
+                const dow = DNAMES[new Date(date + 'T12:00:00').getDay()];
+                const formattedDate = `${fmtD(date)} • ${dow}`;
+
+                const card = document.createElement('div');
+                card.className = 'day-card';
+                
+                // Header with date and summary counts
+                let headerHtml = `
+                    <div class="day-header">
+                        <span class="day-date-title">📅 ${formattedDate}</span>
+                        <div class="day-summary-badges">
+                            ${dayData.present > 0 ? `<span class="day-summary-badge present">${dayData.present} Pres</span>` : ''}
+                            ${dayData.absent > 0 ? `<span class="day-summary-badge absent">${dayData.absent} Abs</span>` : ''}
+                        </div>
                     </div>
-                </div>
-                <div class="subj-row-perc" style="color: ${percCol};">${s.percentage.toFixed(1)}%</div>
-                <div class="subj-row-arrow">></div>
-            </div>
-            <div class="subj-row-progress">
-                <div class="subj-row-fill" style="width: ${s.percentage}%; background: ${percCol};"></div>
-            </div>
-        `;
-        subjList.appendChild(row);
-    });
+                `;
+
+                // Classes list for that day
+                let classesHtml = '<div class="day-classes-list">';
+                dayData.classes.forEach(c => {
+                    const isPresent = c.status === 'P' || c.status.toUpperCase() === 'PRESENT';
+                    classesHtml += `
+                        <div class="day-class-item" onclick="showSubjectDetail('${c.subject_name}')" style="cursor: pointer;">
+                            <div class="day-class-info">
+                                <span class="day-class-subject">${c.subject_name}</span>
+                                <span class="day-class-period">Period ${c.period_no || '--'}</span>
+                            </div>
+                            <span class="day-class-status ${isPresent ? 'present' : 'absent'}">${c.status}</span>
+                        </div>
+                    `;
+                });
+                classesHtml += '</div>';
+
+                card.innerHTML = headerHtml + classesHtml;
+                dailyLogsList.appendChild(card);
+            });
+        }
+    }
 }
 
 function renderSubjects() {
@@ -1214,14 +1264,14 @@ function renderSettingsPage() {
     const emailLbl = document.getElementById('settingsProfileEmail');
 
     if (!connectionData) {
-        if (enrollLbl) enrollLbl.textContent = 'Enrollment: Not Connected';
+        if (enrollLbl) enrollLbl.textContent = 'Accsoft User ID: Not Connected';
         if (badge) {
             badge.textContent = 'Disconnected';
             badge.className = 'hero-badge critical';
         }
         if (syncLbl) syncLbl.textContent = 'Last Synced: Never';
     } else {
-        if (enrollLbl) enrollLbl.textContent = `Enrollment: ${connectionData.enrollment_no}`;
+        if (enrollLbl) enrollLbl.textContent = `Accsoft User ID: ${connectionData.enrollment_no}`;
         if (badge) {
             badge.textContent = connectionData.last_sync_status === 'SUCCESS' ? 'Connected' : 'Sync Error';
             badge.className = connectionData.last_sync_status === 'SUCCESS' ? 'hero-badge safe' : 'hero-badge critical';

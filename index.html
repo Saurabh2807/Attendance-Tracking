@@ -188,8 +188,8 @@
                     </div>
                 </div>
                 
-                <div class="fl">User ID (Enrollment Number)</div>
-                <input type="text" class="dinput" id="accsoftEnroll" placeholder="Enter enrollment number">
+                <div class="fl">Accsoft User ID</div>
+                <input type="text" class="dinput" id="accsoftEnroll" placeholder="Enter Accsoft User ID">
                 
                 <div class="fl">Password</div>
                 <input type="password" class="dinput" id="accsoftPass" placeholder="Enter AccSoft password">
@@ -328,14 +328,14 @@
                         <!-- Top 2 insights rendered dynamically -->
                     </div>
 
-                    <!-- Subject Preview Title -->
+                    <!-- Daily Logs Title -->
                     <div class="preview-header">
-                        <span class="preview-title">Subjects Overview</span>
-                        <span class="preview-link" onclick="go('subjects', document.querySelectorAll('.ntab')[1])">View All →</span>
+                        <span class="preview-title">Daily Logs Overview</span>
+                        <span class="preview-link" onclick="go('subjects', document.querySelectorAll('.ntab')[1])">View Details →</span>
                     </div>
                     
-                    <!-- Subject Preview List -->
-                    <div id="dashSubjectList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                    <!-- Daily Logs List -->
+                    <div id="dashDailyLogsList" style="display: flex; flex-direction: column; gap: 12px;"></div>
                 </div>
             </div>
 
@@ -443,7 +443,7 @@
                             <span class="settings-item-icon">👤</span>
                             <div style="display:flex; flex-direction:column;">
                                 <span class="settings-item-name">Portal Account</span>
-                                <span class="settings-item-val" id="settingsEnrollLbl">Enrollment: --</span>
+                                <span class="settings-item-val" id="settingsEnrollLbl">Accsoft User ID: --</span>
                             </div>
                         </div>
                         <span class="hero-badge safe" id="settingsConnectionBadge">Connected</span>

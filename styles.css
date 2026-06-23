@@ -1327,3 +1327,106 @@ input:checked + .slider:before {
     opacity: 1;
     transform: translateY(0);
 }
+
+/* Day-wise Logs on Dashboard */
+.day-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: var(--shadow-card);
+}
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid var(--border);
+    padding-bottom: 8px;
+}
+.day-date-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-sec);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.day-summary-badges {
+    display: flex;
+    gap: 6px;
+}
+.day-summary-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.day-summary-badge.present {
+    background: var(--green-dim);
+    color: var(--green);
+}
+.day-summary-badge.absent {
+    background: var(--red-dim);
+    color: var(--red);
+}
+.day-classes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.day-class-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    transition: var(--transition);
+}
+.day-class-item:active {
+    opacity: 0.7;
+}
+.day-class-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+    margin-right: 12px;
+}
+.day-class-subject {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.day-class-period {
+    font-size: 0.68rem;
+    color: var(--text-sec);
+    font-weight: 500;
+}
+.day-class-status {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 8px;
+    min-width: 60px;
+    text-align: center;
+}
+.day-class-status.present {
+    background: var(--green-dim);
+    color: var(--green);
+}
+.day-class-status.absent {
+    background: var(--red-dim);
+    color: var(--red);
+}
+
+/* Home Page Insights Layout Tweak */
+#dashInsightsPreviewList .insight-card {
+    width: 92%;
+    margin: 0 auto;
+}
