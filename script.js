@@ -121,6 +121,84 @@ function handleInitializationFailure(err) {
     toast("⚠️ Connection error or session expired. Please log in again.");
 }
 
+// ===== OFFLINE LOCAL STORAGE CACHE SYSTEM =====
+function loadCachedData(userId) {
+    try {
+        console.log("[CACHE] Attempting to load cached user data from localStorage for:", userId);
+        const cachedConn = localStorage.getItem(`ae_conn_${userId}`);
+        const cachedSum = localStorage.getItem(`ae_sum_${userId}`);
+        const cachedLogs = localStorage.getItem(`ae_logs_${userId}`);
+
+        if (cachedConn) {
+            connectionData = JSON.parse(cachedConn);
+            console.log("[CACHE] Loaded cached connection details:", connectionData);
+        }
+        if (cachedSum) {
+            summaryData = JSON.parse(cachedSum);
+            console.log("[CACHE] Loaded cached summary data count:", summaryData.length);
+        }
+        if (cachedLogs) {
+            logsData = JSON.parse(cachedLogs);
+            console.log("[CACHE] Loaded cached logs data count:", logsData.length);
+        }
+
+        // If we have cached connection data, show the dashboard and render values immediately
+        if (connectionData) {
+            console.log("[CACHE] Rendering dashboard with cached data");
+            document.getElementById('ob').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            
+            // Set header labels
+            const name = currentUser.user_metadata?.full_name || 'Student';
+            document.getElementById('headerWelcome').textContent = `Hi, ${name} 👋`;
+            
+            const lastSyncEl = document.getElementById('headerLastSync');
+            if (lastSyncEl) {
+                const lastSyncStr = connectionData.last_sync_at ? fmtDateTime(connectionData.last_sync_at) : 'Never';
+                lastSyncEl.textContent = `Last Sync: ${lastSyncStr}`;
+            }
+
+            // Render cached data on UI panels
+            updateSyncStatusStrip();
+            renderDashboard();
+            renderSubjects();
+            populateHistoryFilters();
+            renderHistory();
+            renderInsights();
+            renderSettingsPage();
+
+            isAppReady = true;
+            checkAndHideSplash();
+        }
+    } catch (e) {
+        console.error("[CACHE] Failed to load cached user data:", e);
+    }
+}
+
+function saveCachedData(userId) {
+    try {
+        if (!userId) return;
+        if (connectionData) {
+            localStorage.setItem(`ae_conn_${userId}`, JSON.stringify(connectionData));
+        } else {
+            localStorage.removeItem(`ae_conn_${userId}`);
+        }
+        if (summaryData) {
+            localStorage.setItem(`ae_sum_${userId}`, JSON.stringify(summaryData));
+        } else {
+            localStorage.removeItem(`ae_sum_${userId}`);
+        }
+        if (logsData) {
+            localStorage.setItem(`ae_logs_${userId}`, JSON.stringify(logsData));
+        } else {
+            localStorage.removeItem(`ae_logs_${userId}`);
+        }
+        console.log("[CACHE] Successfully saved data to localStorage");
+    } catch (e) {
+        console.error("[CACHE] Failed to save user data to cache:", e);
+    }
+}
+
 // Unified session state handler with idempotency guard
 async function handleSessionState(session) {
     const userId = session && session.user ? session.user.id : null;
@@ -130,12 +208,16 @@ async function handleSessionState(session) {
         return;
     }
     
+    const previousUserId = processedUserId;
     processedUserId = userId;
     currentUser = session ? session.user : null;
     
     console.log(`[SESSION] Processing state for user ID: ${userId || 'guest'}`);
     
     if (currentUser) {
+        // Load cached data from localStorage immediately to show last synced data without delay
+        loadCachedData(currentUser.id);
+
         if (isInitializing) {
             console.log("[SESSION] Already processing initial boot check. Skipping nested load.");
             return;
@@ -154,6 +236,16 @@ async function handleSessionState(session) {
         }
     } else {
         console.log("[SESSION] No active session found. Routing to Login Screen.");
+        // Clear active session states and cache on logout
+        if (previousUserId) {
+            localStorage.removeItem(`ae_conn_${previousUserId}`);
+            localStorage.removeItem(`ae_sum_${previousUserId}`);
+            localStorage.removeItem(`ae_logs_${previousUserId}`);
+        }
+        connectionData = null;
+        summaryData = [];
+        logsData = [];
+
         pendingInitStep = 'route-to-welcome';
         showWelcomeScreen();
         // Force splash screen to hide quickly on welcome/login routing
@@ -755,6 +847,16 @@ async function handleDisconnectAccsoft() {
         if (error) throw error;
 
         toast("🗑️ Disconnected portal successfully");
+        // Clear cached data from localStorage
+        if (currentUser) {
+            localStorage.removeItem(`ae_conn_${currentUser.id}`);
+            localStorage.removeItem(`ae_sum_${currentUser.id}`);
+            localStorage.removeItem(`ae_logs_${currentUser.id}`);
+        }
+        connectionData = null;
+        summaryData = [];
+        logsData = [];
+
         await checkConnectionAndLoadData();
     } catch (err) {
         toast(`Error: ${err.message}`);
@@ -940,6 +1042,9 @@ async function refreshData() {
         renderInsights();
         renderSettingsPage();
         console.log("[DASHBOARD] All UI elements successfully rendered.");
+
+        // Save successfully loaded data to cache
+        saveCachedData(currentUser.id);
 
     } catch (err) {
         console.error("[DASHBOARD] Data refresh failed:", err);
