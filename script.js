@@ -1957,3 +1957,75 @@ function toast(m) {
         setTimeout(() => t.classList.remove('show'), 3000);
     }
 }
+
+// ===== PWA SERVICE WORKER REGISTRATION & LIFE CYCLE =====
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => {
+                console.log('[PWA] Service Worker registered with scope:', reg.scope);
+                
+                // Handle SW updates and skip waiting reload
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    if (installingWorker) {
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed') {
+                                if (navigator.serviceWorker.controller) {
+                                    console.log('[PWA] New version detected, activating...');
+                                    installingWorker.postMessage('skipWaiting');
+                                } else {
+                                    console.log('[PWA] Content cached offline.');
+                                }
+                            }
+                        };
+                    }
+                };
+            })
+            .catch(err => {
+                console.error('[PWA] Service Worker registration failed:', err);
+            });
+    });
+
+    // Reload active tab when new worker takes over
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+            refreshing = true;
+            console.log('[PWA] Controller changed, reloading page...');
+            window.location.reload();
+        }
+    });
+}
+
+// ===== PWA INSTALL EXPERIENCE INTERCEPTOR =====
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the default browser prompt banner from showing automatically
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show the custom install button inside settings menu
+    const installItem = document.getElementById('pwaInstallItem');
+    if (installItem) {
+        installItem.style.display = 'flex';
+        installItem.onclick = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`[PWA] User response to installation prompt: ${outcome}`);
+                deferredPrompt = null;
+                installItem.style.display = 'none';
+            }
+        };
+    }
+});
+
+window.addEventListener('appinstalled', (e) => {
+    console.log('[PWA] AttendEase installed successfully.');
+    const installItem = document.getElementById('pwaInstallItem');
+    if (installItem) {
+        installItem.style.display = 'none';
+    }
+    toast("🎉 AttendEase installed successfully on your device!");
+});
