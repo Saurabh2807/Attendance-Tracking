@@ -22,6 +22,70 @@ let isInitializing = false;
 let processedUserId = undefined;
 let pendingInitStep = 'none';
 
+function getCachedUser() {
+    try {
+        const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (key) {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data && data.user) {
+                return data.user;
+            }
+        }
+    } catch (e) {
+        console.error("[SESSION] Error reading cached user from localStorage:", e);
+    }
+    return null;
+}
+
+function showOfflineBanner(message) {
+    let banner = document.getElementById('appOfflineBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'appOfflineBanner';
+        banner.className = 'offline-banner';
+        const header = document.querySelector('.header');
+        if (header) {
+            header.insertAdjacentElement('afterend', banner);
+        }
+    }
+    const bannerText = banner.querySelector('.banner-text');
+    if (bannerText) {
+        bannerText.textContent = message;
+    } else {
+        banner.innerHTML = `⚠️ <span class="banner-text">${message}</span>`;
+    }
+    
+    // Disable Sync actions
+    disableSyncActions(true);
+}
+
+function hideOfflineBanner() {
+    const banner = document.getElementById('appOfflineBanner');
+    if (banner) {
+        banner.remove();
+    }
+    // Enable Sync actions
+    disableSyncActions(false);
+}
+
+function disableSyncActions(disable) {
+    const syncNavBtn = document.querySelector('.ntab-sync');
+    if (syncNavBtn) {
+        if (disable) {
+            syncNavBtn.style.opacity = '0.4';
+            syncNavBtn.style.pointerEvents = 'none';
+        } else {
+            syncNavBtn.style.opacity = '1';
+            syncNavBtn.style.pointerEvents = 'auto';
+        }
+    }
+    const fallbackBtn = document.getElementById('dashboardFallbackBtn');
+    if (fallbackBtn) {
+        fallbackBtn.disabled = disable;
+        fallbackBtn.style.opacity = disable ? '0.5' : '1';
+    }
+}
+
 function checkAndHideSplash() {
     if (isAppReady && isTimerDone) {
         console.log("[SPLASH] Hiding splash screen.");
@@ -113,6 +177,7 @@ const DNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', async () => {
     pendingInitStep = 'check-supabase-config';
+    console.log('[BOOT] Application starting');
     console.log("[BOOT] DOMContentLoaded event fired.");
     
     // Light/Dark Theme Restore
@@ -140,8 +205,50 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.log("[SPLASH] Safety timeout started (3s).");
     setTimeout(() => {
         if (!isAppReady) {
+            console.log("[TIMEOUT] Splash timeout triggered");
             console.error(`[SPLASH] Timeout triggered. Pending Step: ${pendingInitStep}`);
-            handleInitializationFailure(new Error(`Startup timed out at step: ${pendingInitStep}`));
+            
+            // Ensure timeout fallback only activates when no valid session exists, OR session restoration genuinely fails
+            const sessionExists = !!currentUser;
+            if (sessionExists) {
+                console.log("[TIMEOUT] Session exists during safety timeout. Bypassing login redirect. Forcing app to ready.");
+                console.log("[AUTH] Redirecting to dashboard");
+                document.getElementById('ob').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                isAppReady = true;
+                isTimerDone = true;
+                checkAndHideSplash();
+            } else {
+                // If getSession is hanging, check cached user as fallback
+                const cachedUser = getCachedUser();
+                if (cachedUser) {
+                    console.log("[TIMEOUT] getSession check hung, but cached user found in localStorage. Opening offline fallback.");
+                    console.log("[SESSION] Session restored from local cache (offline fallback)");
+                    console.log("[SESSION] Session found");
+                    console.log("[SESSION] Session restored");
+                    currentUser = cachedUser;
+                    processedUserId = cachedUser.id;
+                    
+                    console.log("[AUTH] Redirecting to dashboard");
+                    document.getElementById('ob').style.display = 'none';
+                    document.getElementById('app').style.display = 'flex';
+                    
+                    isAppReady = true;
+                    isTimerDone = true;
+                    checkAndHideSplash();
+                    
+                    // Set welcome header label
+                    const name = cachedUser.user_metadata?.full_name || 'Student';
+                    const welcomeEl = document.getElementById('headerWelcome');
+                    if (welcomeEl) welcomeEl.textContent = `Hi, ${name} 👋`;
+                    
+                    showOfflineBanner("Offline Mode - Reconnecting...");
+                } else {
+                    console.log("[TIMEOUT] getSession hung and no cached user exists. Showing login screen.");
+                    console.log("[SESSION] Session missing");
+                    handleInitializationFailure(new Error(`Startup timed out at step: ${pendingInitStep}`));
+                }
+            }
         }
     }, 3000);
 
@@ -217,6 +324,14 @@ window.addEventListener('DOMContentLoaded', async () => {
         console.log("[AUTH] Setting up onAuthStateChange listener...");
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
             console.log(`[AUTH] Auth state changed event received: ${event}`, session);
+            if (session) {
+                console.log("[SESSION] Session found");
+                if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                    console.log("[SESSION] Session restored");
+                }
+            } else {
+                console.log("[SESSION] Session missing");
+            }
             try {
                 await handleSessionState(session);
             } catch (err) {
@@ -232,18 +347,60 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Explicitly call getSession() to handle fast session restoration
     try {
-        console.log("[SESSION] Verifying session via getSession()...");
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
-        if (error) {
-            console.error("[SESSION] getSession() call returned error:", error);
-            throw error;
-        }
-        console.log("[SESSION] getSession() completed. Session found:", !!session);
+        console.log("[SESSION] getSession started");
+        
+        let session = null;
+        let getSessionError = null;
         try {
-            await handleSessionState(session);
-        } catch (err) {
-            console.error("[SESSION] Error handling manual getSession state:", err);
-            handleInitializationFailure(err);
+            const res = await supabaseClient.auth.getSession();
+            session = res.data?.session;
+            getSessionError = res.error;
+        } catch (e) {
+            getSessionError = e;
+        }
+        
+        console.log("[SESSION] getSession completed");
+
+        // If we already timed out and forced AppReady using offline fallback, don't re-run full load unless we succeeded
+        if (isAppReady && currentUser && getSessionError) {
+            console.log("[SESSION] getSession failed after safety timeout. Staying in offline mode.");
+            return;
+        }
+
+        if (getSessionError) {
+            console.warn("[SESSION] getSession() failed or returned error:", getSessionError);
+            
+            // Check if it is a network error or token invalidation
+            const isNetworkError = getSessionError.message && (
+                getSessionError.message.toLowerCase().includes("fetch") || 
+                getSessionError.message.toLowerCase().includes("network") || 
+                getSessionError.message.toLowerCase().includes("load") ||
+                getSessionError.message.toLowerCase().includes("timeout")
+            );
+
+            if (isNetworkError && currentUser) {
+                console.log("[SESSION] Network error during getSession. Bypassing login redirect. Staying offline.");
+                showOfflineBanner("Offline Mode");
+                return;
+            }
+
+            throw getSessionError;
+        }
+
+        if (session) {
+            console.log("[SESSION] Session found");
+            console.log("[SESSION] Session restored");
+            hideOfflineBanner();
+            try {
+                await handleSessionState(session);
+            } catch (err) {
+                console.error("[SESSION] Error handling manual getSession state:", err);
+                handleInitializationFailure(err);
+            }
+        } else {
+            console.log("[SESSION] Session missing");
+            hideOfflineBanner();
+            await handleSessionState(null);
         }
     } catch (err) {
         console.error("[SESSION] Failed to query session via getSession():", err);
@@ -460,6 +617,7 @@ async function handleGoogleSignIn() {
 // ===== ACCSOFT PORTAL LOGINS =====
 // ===== ACCSOFT PORTAL LOGINS =====
 async function checkConnectionAndLoadData() {
+    console.log('[PROFILE] Loading profile');
     try {
         console.log("[PROFILE] Checking user connection status in database...");
         // Fetch connection record
@@ -475,6 +633,7 @@ async function checkConnectionAndLoadData() {
         }
 
         connectionData = conn;
+        console.log('[PROFILE] Profile loaded');
 
         if (!conn) {
             console.log("[PROFILE] User has no AccSoft connection record. Redirecting to connect screen.");
@@ -483,6 +642,7 @@ async function checkConnectionAndLoadData() {
             checkAndHideSplash();
         } else {
             console.log("[PROFILE] User has AccSoft connection. Loading dashboard...");
+            console.log("[AUTH] Redirecting to dashboard");
             document.getElementById('ob').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
             
@@ -492,23 +652,30 @@ async function checkConnectionAndLoadData() {
             
             // Refresh local state lists
             pendingInitStep = 'load-attendance-data';
-            await refreshData();
+            try {
+                await refreshData();
+            } catch (refreshErr) {
+                console.error("[PROFILE] refreshData failed during connection load:", refreshErr);
+            }
         }
         isAppReady = true;
         checkAndHideSplash();
     } catch (err) {
         console.error("[PROFILE] Error checking connection status:", err);
-        if (!isAppReady) {
-            // Fail-safe redirect during initial load sequence
-            handleInitializationFailure(err);
-        } else {
-            toast("⚠️ Connection error. Please check your network.");
+        if (currentUser) {
+            // Bypass login redirect since session exists
+            console.log("[AUTH] Redirecting to dashboard");
+            document.getElementById('ob').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
             
-            // Show retry button on splash screen instead of logging them out
-            const loader = document.querySelector('.splash-loader');
-            if (loader) loader.style.display = 'none';
-            const retryBox = document.getElementById('splashRetry');
-            if (retryBox) retryBox.style.display = 'block';
+            isAppReady = true;
+            isTimerDone = true;
+            checkAndHideSplash();
+            
+            showOfflineBanner("Offline Mode");
+            toast("⚠️ Connection error. Loaded offline mode.");
+        } else {
+            handleInitializationFailure(err);
         }
     }
 }
@@ -764,10 +931,18 @@ async function refreshData() {
 
     } catch (err) {
         console.error("[DASHBOARD] Data refresh failed:", err);
-        toast("⚠️ Failed to load attendance data");
-        // Re-throw if in initial load so loader gets notified of the failure
-        if (!isAppReady) {
-            throw err;
+        toast("⚠️ Failed to load attendance data. Offline mode.");
+        
+        // Render dashboard with empty/offline states instead of throwing
+        try {
+            renderDashboard();
+            renderSubjects();
+            populateHistoryFilters();
+            renderHistory();
+            renderInsights();
+            renderSettingsPage();
+        } catch (renderErr) {
+            console.error("[DASHBOARD] Rendering failed during offline fallback:", renderErr);
         }
     }
 }
@@ -1031,6 +1206,7 @@ function renderDashboard() {
             });
         }
     }
+    console.log('[DASHBOARD] Dashboard rendered');
 }
 
 function renderSubjects() {
