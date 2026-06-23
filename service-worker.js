@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendease-cache-v2';
+const CACHE_NAME = 'attendease-cache-v3';
 const ASSETS = [
     './',
     './index.html',
@@ -46,7 +46,7 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch Event - Serve from Cache (Cache-First) for local assets only
+// Fetch Event - Dynamic Cache Strategies for static assets and CDNs
 self.addEventListener('fetch', (event) => {
     // Only intercept GET requests
     if (event.request.method !== 'GET') {
@@ -56,7 +56,7 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     // Only cache requests matching our own origin (static local assets) or our trusted CDNs
-    // Do NOT cache database calls (Supabase), sync service requests (Railway), or auth requests
+    // Do NOT cache database calls (Supabase), sync service requests, or auth requests
     const isTrustedCDN = url.origin === 'https://cdn.jsdelivr.net' || 
                          url.origin === 'https://fonts.googleapis.com' || 
                          url.origin === 'https://fonts.gstatic.com';
@@ -70,14 +70,44 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Strategy 1: Network-First for config.js
+    // Ensures any changes to window.SYNC_SERVICE_URL are picked up instantly when online,
+    // while still falling back to cache if offline.
+    if (url.pathname.endsWith('/config.js') || url.pathname.includes('config.js')) {
+        event.respondWith(
+            fetch(event.request)
+                .then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        const responseToCache = networkResponse.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => {
+                    return caches.match(event.request);
+                })
+        );
+        return;
+    }
+
+    // Strategy 2: Stale-While-Revalidate for other static local assets and CDNs
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                // Serve from cache
-                return cachedResponse;
-            }
-            // Fallback to network
-            return fetch(event.request);
+            const fetchPromise = fetch(event.request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
+                return networkResponse;
+            }).catch(() => {
+                // Ignore network update errors (e.g. when offline)
+            });
+
+            return cachedResponse || fetchPromise;
         })
     );
 });
