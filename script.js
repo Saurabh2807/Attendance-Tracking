@@ -475,9 +475,11 @@ window.addEventListener('DOMContentLoaded', async () => {
                 console.log("[SESSION] Session missing");
             }
             try {
-                console.log('[ON_AUTH_STATE_CHANGE] before await handleSessionState(session)');
-                await handleSessionState(session);
-                console.log('[ON_AUTH_STATE_CHANGE] after await handleSessionState(session)');
+                console.log('[ON_AUTH_STATE_CHANGE] deferring handleSessionState(session)');
+                setTimeout(() => {
+                    console.log('[ON_AUTH_STATE_CHANGE] inside setTimeout: calling handleSessionState(session)');
+                    handleSessionState(session);
+                }, 0);
             } catch (err) {
                 console.error("[AUTH] Error processing auth state change event:", err);
                 handleInitializationFailure(err);
