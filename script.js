@@ -1036,222 +1036,245 @@ async function handleDisconnectAccsoft() {
 // ===== ATTENDANCE MANUAL SYNC PIPELINE =====
 // ===== ATTENDANCE MANUAL SYNC PIPELINE =====
 async function triggerSyncNow() {
-    if (isSyncInProgress) {
-        console.log('[SYNC] Blocked: Sync already in progress.');
-        return;
-    }
-    isSyncInProgress = true;
-    console.log('[SYNC] Started');
-    const modal = document.getElementById('syncingModal');
-    const stepLogin = document.getElementById('syncStepLogin');
-    const stepFetch = document.getElementById('syncStepFetch');
-    const stepSave = document.getElementById('syncStepSave');
-    const bar = document.getElementById('syncProgressBar');
-    const text = document.getElementById('syncProgressText');
+    console.log('[SEQUENTIAL] A: function entered');
+    try {
+        if (isSyncInProgress) {
+            console.log('[SYNC] Blocked: Sync already in progress.');
+            return;
+        }
+        isSyncInProgress = true;
+        console.log('[SYNC] Started');
+        const modal = document.getElementById('syncingModal');
+        const stepLogin = document.getElementById('syncStepLogin');
+        const stepFetch = document.getElementById('syncStepFetch');
+        const stepSave = document.getElementById('syncStepSave');
+        const bar = document.getElementById('syncProgressBar');
+        const text = document.getElementById('syncProgressText');
 
-    // Reset Sync Progress UI
-    modal.classList.remove('hidden');
-    stepLogin.textContent = '⏳ logging to accsoft';
-    stepLogin.style.color = 'var(--text3)';
-    stepFetch.textContent = '⏳ fetching attendance';
-    stepFetch.style.color = 'var(--text3)';
-    stepSave.textContent = '⏳ fetched saved to database';
-    stepSave.style.color = 'var(--text3)';
-    bar.style.width = '0%';
-    text.textContent = '0 / 3';
+        // Reset Sync Progress UI
+        modal.classList.remove('hidden');
+        stepLogin.textContent = '⏳ logging to accsoft';
+        stepLogin.style.color = 'var(--text3)';
+        stepFetch.textContent = '⏳ fetching attendance';
+        stepFetch.style.color = 'var(--text3)';
+        stepSave.textContent = '⏳ fetched saved to database';
+        stepSave.style.color = 'var(--text3)';
+        bar.style.width = '0%';
+        text.textContent = '0 / 3';
 
-    let isSyncFinished = false;
-    const progressIntervals = [];
+        let isSyncFinished = false;
+        const progressIntervals = [];
 
-    // Timeout guard at 120 seconds (helps wake up cold containers + allows slow scrapers to resolve)
-    const syncTimeout = setTimeout(() => {
-        if (!isSyncFinished) {
-            console.error('[SYNC] Timeout');
+        // Timeout guard at 120 seconds (helps wake up cold containers + allows slow scrapers to resolve)
+        const syncTimeout = setTimeout(() => {
+            if (!isSyncFinished) {
+                console.error('[SYNC] Timeout');
+                modal.classList.add('hidden');
+                toast("Sync timed out. Please try again.");
+                isSyncFinished = true;
+                isSyncInProgress = false; // Reset lock
+                progressIntervals.forEach(clearTimeout);
+            }
+        }, 120000);
+
+        if (!supabaseClient) {
+            clearTimeout(syncTimeout);
+            isSyncFinished = true;
+            isSyncInProgress = false; // Reset lock
             modal.classList.add('hidden');
-            toast("Sync timed out. Please try again.");
+            toast("⚠️ Supabase service is unavailable. Please check your connection.");
+            return;
+        }
+
+        let session = null;
+        const getSessionStartTime = Date.now();
+        console.log('[SEQUENTIAL] B: before getSession');
+        console.log('[DIAGNOSTIC] getSession started');
+        let getSessionTimedOutOrFailed = false;
+
+        try {
+            const res = await promiseWithTimeout(
+                supabaseClient.auth.getSession(),
+                5000,
+                'getSession timeout'
+            );
+            const duration = Date.now() - getSessionStartTime;
+            console.log(`[DIAGNOSTIC] getSession finished (${duration}ms)`);
+            console.log('[SEQUENTIAL] C: after getSession');
+            session = res.data?.session;
+        } catch (err) {
+            getSessionTimedOutOrFailed = true;
+            const duration = Date.now() - getSessionStartTime;
+            console.warn(`[DIAGNOSTIC] getSession timed out or failed after ${duration}ms:`, err);
+            console.log('[SEQUENTIAL] C: after getSession (failed/timed out)');
+        }
+
+        if (isSyncFinished) return;
+
+        if (getSessionTimedOutOrFailed) {
+            const refreshSessionStartTime = Date.now();
+            console.log('[SEQUENTIAL] D: before refreshSession');
+            console.log('[DIAGNOSTIC] refreshSession started');
+            try {
+                const res = await promiseWithTimeout(
+                    safeRefreshSession(),
+                    8000,
+                    'refreshSession timeout'
+                );
+                const duration = Date.now() - refreshSessionStartTime;
+                console.log(`[DIAGNOSTIC] refreshSession finished (${duration}ms)`);
+                console.log('[SEQUENTIAL] E: after refreshSession');
+                session = res.data?.session;
+            } catch (err) {
+                const duration = Date.now() - refreshSessionStartTime;
+                console.error(`[DIAGNOSTIC] refreshSession finished with error/timeout after ${duration}ms:`, err);
+                console.log('[SEQUENTIAL] E: after refreshSession (failed/timed out)');
+            }
+        } else {
+            console.log('[SEQUENTIAL] D: refreshSession skipped (getSession succeeded)');
+            console.log('[SEQUENTIAL] E: refreshSession skipped (getSession succeeded)');
+        }
+
+        if (isSyncFinished) return;
+
+        if (!session) {
+            clearTimeout(syncTimeout);
             isSyncFinished = true;
             isSyncInProgress = false; // Reset lock
             progressIntervals.forEach(clearTimeout);
+            modal.classList.add('hidden');
+            toast("Session expired. Please log in again.");
+            return;
         }
-    }, 120000);
-
-    if (!supabaseClient) {
-        clearTimeout(syncTimeout);
-        isSyncFinished = true;
-        isSyncInProgress = false; // Reset lock
-        modal.classList.add('hidden');
-        toast("⚠️ Supabase service is unavailable. Please check your connection.");
-        return;
-    }
-
-    let session = null;
-    const getSessionStartTime = Date.now();
-    console.log('[DIAGNOSTIC] getSession started');
-    let getSessionTimedOutOrFailed = false;
-
-    try {
-        const res = await promiseWithTimeout(
-            supabaseClient.auth.getSession(),
-            5000,
-            'getSession timeout'
-        );
-        const duration = Date.now() - getSessionStartTime;
-        console.log(`[DIAGNOSTIC] getSession finished (${duration}ms)`);
-        session = res.data?.session;
-    } catch (err) {
-        getSessionTimedOutOrFailed = true;
-        const duration = Date.now() - getSessionStartTime;
-        console.warn(`[DIAGNOSTIC] getSession timed out or failed after ${duration}ms:`, err);
-    }
-
-    if (isSyncFinished) return;
-
-    if (getSessionTimedOutOrFailed) {
-        const refreshSessionStartTime = Date.now();
-        console.log('[DIAGNOSTIC] refreshSession started');
-        try {
-            const res = await promiseWithTimeout(
-                safeRefreshSession(),
-                8000,
-                'refreshSession timeout'
-            );
-            const duration = Date.now() - refreshSessionStartTime;
-            console.log(`[DIAGNOSTIC] refreshSession finished (${duration}ms)`);
-            session = res.data?.session;
-        } catch (err) {
-            const duration = Date.now() - refreshSessionStartTime;
-            console.error(`[DIAGNOSTIC] refreshSession finished with error/timeout after ${duration}ms:`, err);
-        }
-    }
-
-    if (isSyncFinished) return;
-
-    if (!session) {
-        clearTimeout(syncTimeout);
-        isSyncFinished = true;
-        isSyncInProgress = false; // Reset lock
-        progressIntervals.forEach(clearTimeout);
-        modal.classList.add('hidden');
-        toast("Session expired. Please log in again.");
-        return;
-    }
 
 
-    // Helper to register timed progress updates
-    const addProgressStep = (delay, callback) => {
-        const timer = setTimeout(() => {
-            if (!isSyncFinished) {
-                callback();
-            }
-        }, delay);
-        progressIntervals.push(timer);
-    };
+        // Helper to register timed progress updates
+        const addProgressStep = (delay, callback) => {
+            const timer = setTimeout(() => {
+                if (!isSyncFinished) {
+                    callback();
+                }
+            }, delay);
+            progressIntervals.push(timer);
+        };
 
-    // Step 1: Logging in (0.4s)
-    addProgressStep(400, () => {
-        stepLogin.textContent = '🔄 logging to accsoft...';
-        stepLogin.style.color = 'var(--yellow)';
-        bar.style.width = '15%';
-        text.textContent = '0.5 / 3';
-    });
-
-    // Step 2: Cold start wake up (10s)
-    addProgressStep(10000, () => {
-        stepLogin.textContent = '🔄 logging to accsoft...';
-        bar.style.width = '30%';
-        text.textContent = '1.0 / 3';
-    });
-
-    // Step 3: Fetching attendance data (20s)
-    addProgressStep(20000, () => {
-        stepLogin.textContent = '✅ logging to accsoft';
-        stepLogin.style.color = 'var(--green)';
-        stepFetch.textContent = '🔄 fetching attendance...';
-        stepFetch.style.color = 'var(--yellow)';
-        bar.style.width = '50%';
-        text.textContent = '1.5 / 3';
-    });
-
-    // Step 4: Scraping taking longer (35s)
-    addProgressStep(35000, () => {
-        stepFetch.textContent = '🔄 fetching attendance...';
-        bar.style.width = '70%';
-        text.textContent = '2.0 / 3';
-    });
-
-    // Step 5: Saving to database (55s)
-    addProgressStep(55000, () => {
-        stepFetch.textContent = '✅ fetching attendance';
-        stepFetch.style.color = 'var(--green)';
-        stepSave.textContent = '🔄 fetched saved to database...';
-        stepSave.style.color = 'var(--yellow)';
-        bar.style.width = '85%';
-        text.textContent = '2.5 / 3';
-    });
-
-    // Generate unique correlation ID
-    const correlationId = 'sync_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-    console.log(`[DIAGNOSTIC] fetch started with Correlation ID: ${correlationId}`);
-
-    try {
-        // Trigger manual sync API
-        const response = await fetch(`${window.SYNC_SERVICE_URL}/sync-attendance`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-                'X-Correlation-ID': correlationId
-            }
+        // Step 1: Logging in (0.4s)
+        addProgressStep(400, () => {
+            stepLogin.textContent = '🔄 logging to accsoft...';
+            stepLogin.style.color = 'var(--yellow)';
+            bar.style.width = '15%';
+            text.textContent = '0.5 / 3';
         });
 
-        if (isSyncFinished) return;
+        // Step 2: Cold start wake up (10s)
+        addProgressStep(10000, () => {
+            stepLogin.textContent = '🔄 logging to accsoft...';
+            bar.style.width = '30%';
+            text.textContent = '1.0 / 3';
+        });
 
-        console.log('[DIAGNOSTIC] fetch completed');
-        const resData = await response.json();
-        
-        if (isSyncFinished) return;
+        // Step 3: Fetching attendance data (20s)
+        addProgressStep(20000, () => {
+            stepLogin.textContent = '✅ logging to accsoft';
+            stepLogin.style.color = 'var(--green)';
+            stepFetch.textContent = '🔄 fetching attendance...';
+            stepFetch.style.color = 'var(--yellow)';
+            bar.style.width = '50%';
+            text.textContent = '1.5 / 3';
+        });
 
-        if (!response.ok) {
-            throw new Error(resData.error || 'Synchronization failed');
+        // Step 4: Scraping taking longer (35s)
+        addProgressStep(35000, () => {
+            stepFetch.textContent = '🔄 fetching attendance...';
+            bar.style.width = '70%';
+            text.textContent = '2.0 / 3';
+        });
+
+        // Step 5: Saving to database (55s)
+        addProgressStep(55000, () => {
+            stepFetch.textContent = '✅ fetching attendance';
+            stepFetch.style.color = 'var(--green)';
+            stepSave.textContent = '🔄 fetched saved to database...';
+            stepSave.style.color = 'var(--yellow)';
+            bar.style.width = '85%';
+            text.textContent = '2.5 / 3';
+        });
+
+        // Generate unique correlation ID
+        const correlationId = 'sync_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+        console.log('[SEQUENTIAL] F: before fetch');
+        console.log(`[DIAGNOSTIC] fetch started with Correlation ID: ${correlationId}`);
+
+        try {
+            // Trigger manual sync API
+            const response = await fetch(`${window.SYNC_SERVICE_URL}/sync-attendance`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'X-Correlation-ID': correlationId
+                }
+            });
+
+            if (isSyncFinished) return;
+
+            console.log('[DIAGNOSTIC] fetch completed');
+            console.log('[SEQUENTIAL] G: after fetch');
+            const resData = await response.json();
+            
+            if (isSyncFinished) return;
+
+            if (!response.ok) {
+                throw new Error(resData.error || 'Synchronization failed');
+            }
+
+            if (isSyncFinished) return;
+            clearTimeout(syncTimeout);
+            progressIntervals.forEach(clearTimeout);
+            isSyncFinished = true;
+
+            // Fast forward animations to success state
+            stepLogin.textContent = '✅ logging to accsoft';
+            stepLogin.style.color = 'var(--green)';
+            bar.style.width = '33%';
+            
+            stepFetch.textContent = '✅ fetching attendance';
+            stepFetch.style.color = 'var(--green)';
+            bar.style.width = '66%';
+            
+            stepSave.textContent = '✅ fetched saved to database';
+            stepSave.style.color = 'var(--green)';
+            bar.style.width = '100%';
+            text.textContent = '3 / 3';
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                toast("✅ Sync completed successfully!");
+                refreshData();
+                isSyncInProgress = false; // Reset lock
+            }, 1000);
+            console.log('[SYNC] Finished');
+            console.log('[SEQUENTIAL] H: function completed');
+
+        } catch (err) {
+            console.error('[DIAGNOSTIC] fetch failed', err);
+            console.log('[SEQUENTIAL] G: after fetch (failed)');
+            if (isSyncFinished) return;
+            clearTimeout(syncTimeout);
+            progressIntervals.forEach(clearTimeout);
+            isSyncFinished = true;
+            isSyncInProgress = false; // Reset lock
+
+            modal.classList.add('hidden');
+            toast(`❌ ${err.message}`);
+            await refreshData(); // Refresh to update error message on connection state card
+            
+            throw err;
         }
 
-        if (isSyncFinished) return;
-        clearTimeout(syncTimeout);
-        progressIntervals.forEach(clearTimeout);
-        isSyncFinished = true;
-
-        // Fast forward animations to success state
-        stepLogin.textContent = '✅ logging to accsoft';
-        stepLogin.style.color = 'var(--green)';
-        bar.style.width = '33%';
-        
-        stepFetch.textContent = '✅ fetching attendance';
-        stepFetch.style.color = 'var(--green)';
-        bar.style.width = '66%';
-        
-        stepSave.textContent = '✅ fetched saved to database';
-        stepSave.style.color = 'var(--green)';
-        bar.style.width = '100%';
-        text.textContent = '3 / 3';
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            toast("✅ Sync completed successfully!");
-            refreshData();
-            isSyncInProgress = false; // Reset lock
-        }, 1000);
-        console.log('[SYNC] Finished');
-
-    } catch (err) {
-        console.error('[DIAGNOSTIC] fetch failed', err);
-        if (isSyncFinished) return;
-        clearTimeout(syncTimeout);
-        progressIntervals.forEach(clearTimeout);
-        isSyncFinished = true;
-        isSyncInProgress = false; // Reset lock
-
-        modal.classList.add('hidden');
-        toast(`❌ ${err.message}`);
-        await refreshData(); // Refresh to update error message on connection state card
+    } catch (topErr) {
+        console.error('[TOP-LEVEL EXCEPTION IN triggerSyncNow]', topErr);
+        isSyncInProgress = false;
+        throw topErr;
     }
 }
 
