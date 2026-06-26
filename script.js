@@ -48,11 +48,22 @@ function safeRefreshSession() {
     if (!supabaseClient) {
         return Promise.reject(new Error("Supabase client not initialized"));
     }
-    activeRefreshPromise = supabaseClient.auth.refreshSession().finally(() => {
-        activeRefreshPromise = null;
-    });
+    console.log('[DIAGNOSTIC] refresh promise created');
+    activeRefreshPromise = supabaseClient.auth.refreshSession()
+        .then(result => {
+            console.log('[DIAGNOSTIC] refresh promise resolved', result);
+            return result;
+        })
+        .catch(err => {
+            console.error('[DIAGNOSTIC] refresh promise rejected', err);
+            throw err;
+        })
+        .finally(() => {
+            activeRefreshPromise = null;
+        });
     return activeRefreshPromise;
 }
+
 
 
 function getCachedUser() {
@@ -259,7 +270,9 @@ async function handleSessionState(session) {
         
         try {
             pendingInitStep = 'load-user-profile';
+            console.log('[ON_AUTH_STATE_CHANGE] handleSessionState: before await checkConnectionAndLoadData');
             await checkConnectionAndLoadData();
+            console.log('[ON_AUTH_STATE_CHANGE] handleSessionState: after await checkConnectionAndLoadData');
             pendingInitStep = 'complete';
         } catch (err) {
             console.error("[SESSION] Error during user profile or database loading:", err);
@@ -451,6 +464,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         pendingInitStep = 'restore-session';
         console.log("[AUTH] Setting up onAuthStateChange listener...");
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            console.log('[ON_AUTH_STATE_CHANGE] auth callback entered');
             console.log(`[AUTH] Auth state changed event received: ${event}`, session);
             if (session) {
                 console.log("[SESSION] Session found");
@@ -461,11 +475,14 @@ window.addEventListener('DOMContentLoaded', async () => {
                 console.log("[SESSION] Session missing");
             }
             try {
+                console.log('[ON_AUTH_STATE_CHANGE] before await handleSessionState(session)');
                 await handleSessionState(session);
+                console.log('[ON_AUTH_STATE_CHANGE] after await handleSessionState(session)');
             } catch (err) {
                 console.error("[AUTH] Error processing auth state change event:", err);
                 handleInitializationFailure(err);
             }
+            console.log('[ON_AUTH_STATE_CHANGE] auth callback exited');
         });
     } catch (err) {
         console.error("[AUTH] Failed to register onAuthStateChange listener:", err);
@@ -859,11 +876,13 @@ async function checkConnectionAndLoadData(preloadedConn = null) {
                 throw new Error("Supabase SDK is not initialized.");
             }
             // Fetch connection record
+            console.log('[ON_AUTH_STATE_CHANGE] checkConnectionAndLoadData: before await query accsoft_connections');
             const { data, error } = await supabaseClient
                 .from('accsoft_connections')
                 .select('*')
                 .eq('user_id', currentUser.id)
                 .maybeSingle();
+            console.log('[ON_AUTH_STATE_CHANGE] checkConnectionAndLoadData: after await query accsoft_connections');
 
             if (error) {
                 console.error('[CONNECTION ERROR]', error);
@@ -898,7 +917,9 @@ async function checkConnectionAndLoadData(preloadedConn = null) {
             // Refresh local state lists
             pendingInitStep = 'load-attendance-data';
             try {
+                console.log('[ON_AUTH_STATE_CHANGE] checkConnectionAndLoadData: before await refreshData');
                 await refreshData();
+                console.log('[ON_AUTH_STATE_CHANGE] checkConnectionAndLoadData: after await refreshData');
             } catch (refreshErr) {
                 console.error("[PROFILE] refreshData failed during connection load:", refreshErr);
             }
@@ -1290,11 +1311,13 @@ async function refreshData() {
         // Fetch connection record again
         console.log('[CONNECTION] Checking AccSoft connection');
         try {
+            console.log('[ON_AUTH_STATE_CHANGE] refreshData: before await conn single');
             const { data: conn, error: connErr } = await supabaseClient
                 .from('accsoft_connections')
                 .select('*')
                 .eq('user_id', currentUser.id)
                 .single();
+            console.log('[ON_AUTH_STATE_CHANGE] refreshData: after await conn single');
 
             if (connErr) {
                 console.error('[CONNECTION ERROR]', connErr);
@@ -1322,11 +1345,13 @@ async function refreshData() {
 
         // Fetch Summary
         console.log('[SUMMARY] Loading attendance summary');
+        console.log('[ON_AUTH_STATE_CHANGE] refreshData: before await attendance_summary select');
         const { data: summaries, error: sumErr } = await supabaseClient
             .from('attendance_summary')
             .select('*')
             .eq('user_id', currentUser.id)
             .order('subject_name');
+        console.log('[ON_AUTH_STATE_CHANGE] refreshData: after await attendance_summary select');
 
         if (sumErr) {
             console.error('[SUMMARY ERROR]', sumErr);
@@ -1337,12 +1362,14 @@ async function refreshData() {
 
         // Fetch logs
         console.log('[LOGS] Loading attendance logs');
+        console.log('[ON_AUTH_STATE_CHANGE] refreshData: before await attendance_logs select');
         const { data: logs, error: logsErr } = await supabaseClient
             .from('attendance_logs')
             .select('*')
             .eq('user_id', currentUser.id)
             .order('attendance_date', { ascending: false })
             .order('period_no', { ascending: true });
+        console.log('[ON_AUTH_STATE_CHANGE] refreshData: after await attendance_logs select');
 
         if (logsErr) {
             console.error('[LOGS ERROR]', logsErr);
