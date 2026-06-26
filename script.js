@@ -22,6 +22,38 @@ let isInitializing = false;
 let processedUserId = undefined;
 let pendingInitStep = 'none';
 let isSyncInProgress = false;
+let activeRefreshPromise = null;
+
+function promiseWithTimeout(promise, timeoutMs, timeoutErrorMsg) {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            reject(new Error(timeoutErrorMsg));
+        }, timeoutMs);
+    });
+    return Promise.race([
+        promise.then(result => {
+            clearTimeout(timeoutId);
+            return result;
+        }),
+        timeoutPromise
+    ]);
+}
+
+function safeRefreshSession() {
+    if (activeRefreshPromise) {
+        console.log('[SESSION] refreshSession is already in progress, reusing existing promise');
+        return activeRefreshPromise;
+    }
+    if (!supabaseClient) {
+        return Promise.reject(new Error("Supabase client not initialized"));
+    }
+    activeRefreshPromise = supabaseClient.auth.refreshSession().finally(() => {
+        activeRefreshPromise = null;
+    });
+    return activeRefreshPromise;
+}
+
 
 function getCachedUser() {
     try {
@@ -504,6 +536,87 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// ===== LIFE CYCLE RESUME: VISIBILITY CHANGE =====
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+        console.log('[LIFECYCLE] App visible, checking session validity...');
+        if (!supabaseClient) return;
+
+        let session = null;
+        let getSessionStartTime = Date.now();
+        console.log('[DIAGNOSTIC] getSession (visibilitychange) started');
+        let getSessionTimedOutOrFailed = false;
+
+        try {
+            const res = await promiseWithTimeout(
+                supabaseClient.auth.getSession(),
+                5000,
+                'getSession timeout'
+            );
+            const duration = Date.now() - getSessionStartTime;
+            console.log(`[DIAGNOSTIC] getSession (visibilitychange) finished (${duration}ms)`);
+            session = res.data?.session;
+        } catch (err) {
+            getSessionTimedOutOrFailed = true;
+            const duration = Date.now() - getSessionStartTime;
+            console.warn(`[DIAGNOSTIC] getSession (visibilitychange) timed out or failed after ${duration}ms:`, err);
+        }
+
+        if (getSessionTimedOutOrFailed) {
+            let refreshSessionStartTime = Date.now();
+            console.log('[DIAGNOSTIC] refreshSession (visibilitychange) started');
+            try {
+                const res = await promiseWithTimeout(
+                    safeRefreshSession(),
+                    8000,
+                    'refreshSession timeout'
+                );
+                const duration = Date.now() - refreshSessionStartTime;
+                console.log(`[DIAGNOSTIC] refreshSession (visibilitychange) finished (${duration}ms)`);
+                session = res.data?.session;
+            } catch (err) {
+                const duration = Date.now() - refreshSessionStartTime;
+                console.error(`[DIAGNOSTIC] refreshSession (visibilitychange) finished with error/timeout after ${duration}ms:`, err);
+            }
+        }
+
+        if (session) {
+            const expiresAt = session.expires_at; // in seconds
+            const currentTime = Math.floor(Date.now() / 1000);
+            const secondsToExpiry = expiresAt - currentTime;
+            console.log(`[SESSION] Session expires in ${secondsToExpiry}s`);
+
+            if (secondsToExpiry < 600) {
+                console.log('[SESSION] Session is close to expiry or expired. Proactively refreshing...');
+                let refreshSessionStartTime = Date.now();
+                console.log('[DIAGNOSTIC] refreshSession (proactive) started');
+                try {
+                    const res = await promiseWithTimeout(
+                        safeRefreshSession(),
+                        8000,
+                        'refreshSession timeout'
+                    );
+                    const duration = Date.now() - refreshSessionStartTime;
+                    console.log(`[DIAGNOSTIC] refreshSession (proactive) finished (${duration}ms)`);
+                    if (res.data?.session) {
+                        console.log('[SESSION] Session proactively refreshed successfully');
+                    } else {
+                        console.warn('[SESSION] Proactive refreshSession returned no session');
+                    }
+                } catch (err) {
+                    const duration = Date.now() - refreshSessionStartTime;
+                    console.error(`[DIAGNOSTIC] refreshSession (proactive) finished with error/timeout after ${duration}ms:`, err);
+                }
+            } else {
+                console.log('[SESSION] Session is valid for a long time. No refresh needed.');
+            }
+        } else {
+            console.log('[SESSION] No active session found on visibility change.');
+        }
+    }
+});
+
+
 // ===== AUTHENTICATION LIFE CYCLE =====
 function showWelcomeScreen() {
     document.getElementById('ob').style.display = 'flex';
@@ -970,15 +1083,59 @@ async function triggerSyncNow() {
         toast("⚠️ Supabase service is unavailable. Please check your connection.");
         return;
     }
-    const { data: { session } } = await supabaseClient.auth.getSession();
+
+    let session = null;
+    const getSessionStartTime = Date.now();
+    console.log('[DIAGNOSTIC] getSession started');
+    let getSessionTimedOutOrFailed = false;
+
+    try {
+        const res = await promiseWithTimeout(
+            supabaseClient.auth.getSession(),
+            5000,
+            'getSession timeout'
+        );
+        const duration = Date.now() - getSessionStartTime;
+        console.log(`[DIAGNOSTIC] getSession finished (${duration}ms)`);
+        session = res.data?.session;
+    } catch (err) {
+        getSessionTimedOutOrFailed = true;
+        const duration = Date.now() - getSessionStartTime;
+        console.warn(`[DIAGNOSTIC] getSession timed out or failed after ${duration}ms:`, err);
+    }
+
+    if (isSyncFinished) return;
+
+    if (getSessionTimedOutOrFailed) {
+        const refreshSessionStartTime = Date.now();
+        console.log('[DIAGNOSTIC] refreshSession started');
+        try {
+            const res = await promiseWithTimeout(
+                safeRefreshSession(),
+                8000,
+                'refreshSession timeout'
+            );
+            const duration = Date.now() - refreshSessionStartTime;
+            console.log(`[DIAGNOSTIC] refreshSession finished (${duration}ms)`);
+            session = res.data?.session;
+        } catch (err) {
+            const duration = Date.now() - refreshSessionStartTime;
+            console.error(`[DIAGNOSTIC] refreshSession finished with error/timeout after ${duration}ms:`, err);
+        }
+    }
+
+    if (isSyncFinished) return;
+
     if (!session) {
         clearTimeout(syncTimeout);
         isSyncFinished = true;
         isSyncInProgress = false; // Reset lock
+        progressIntervals.forEach(clearTimeout);
         modal.classList.add('hidden');
         toast("Session expired. Please log in again.");
         return;
     }
+
 
     // Helper to register timed progress updates
     const addProgressStep = (delay, callback) => {
@@ -1032,19 +1189,27 @@ async function triggerSyncNow() {
         text.textContent = '2.5 / 3';
     });
 
+    // Generate unique correlation ID
+    const correlationId = 'sync_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    console.log(`[DIAGNOSTIC] fetch started with Correlation ID: ${correlationId}`);
+
     try {
-        console.log('[SYNC] Calling sync service');
         // Trigger manual sync API
         const response = await fetch(`${window.SYNC_SERVICE_URL}/sync-attendance`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${session.access_token}`
+                'Authorization': `Bearer ${session.access_token}`,
+                'X-Correlation-ID': correlationId
             }
         });
 
-        console.log('[SYNC] Response received');
+        if (isSyncFinished) return;
+
+        console.log('[DIAGNOSTIC] fetch completed');
         const resData = await response.json();
         
+        if (isSyncFinished) return;
+
         if (!response.ok) {
             throw new Error(resData.error || 'Synchronization failed');
         }
@@ -1077,13 +1242,13 @@ async function triggerSyncNow() {
         console.log('[SYNC] Finished');
 
     } catch (err) {
+        console.error('[DIAGNOSTIC] fetch failed', err);
         if (isSyncFinished) return;
         clearTimeout(syncTimeout);
         progressIntervals.forEach(clearTimeout);
         isSyncFinished = true;
         isSyncInProgress = false; // Reset lock
 
-        console.error("Sync failed:", err);
         modal.classList.add('hidden');
         toast(`❌ ${err.message}`);
         await refreshData(); // Refresh to update error message on connection state card

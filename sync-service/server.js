@@ -331,6 +331,8 @@ async function scrapeAccsoft(enrollment, password) {
 
 // Middleware to verify authorization token
 async function verifyUserToken(req, res, next) {
+    const correlationId = req.headers['x-correlation-id'] || 'N/A';
+    console.log(`[BACKEND_CORRELATION] verifyUserToken started. Path: ${req.path}, Correlation ID: ${correlationId}`);
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Authorization token missing' });
@@ -422,6 +424,8 @@ app.post('/connect-accsoft', verifyUserToken, async (req, res) => {
 });
 
 app.post('/sync-attendance', verifyUserToken, async (req, res) => {
+    const correlationId = req.headers['x-correlation-id'] || 'N/A';
+    console.log(`[BACKEND_CORRELATION] Received sync-attendance request. User: ${req.user.id}, Correlation ID: ${correlationId}`);
     console.log(`Starting attendance sync for user: ${req.user.id}`);
 
     if (activeSyncs.has(req.user.id)) {
