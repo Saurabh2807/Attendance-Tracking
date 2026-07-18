@@ -1495,39 +1495,67 @@ function renderDashboard() {
     });
 
     const overallPerc = totalHeld > 0 ? (totalPresent / totalHeld * 100) : 0;
-    const ringOffset = 201.06 - (201.06 * Math.min(overallPerc, 100) / 100);
+    const ringOffset = 263.89 - (263.89 * Math.min(overallPerc, 100) / 100);
 
     // Overall Ring Card Updates
     document.getElementById('dashOverallPerc').textContent = `${overallPerc.toFixed(1)}%`;
     const ring = document.getElementById('dashOverallSvgRing');
-    ring.setAttribute('stroke-dashoffset', ringOffset);
-    
-    // Color code ring and text
-    const ringCol = overallPerc >= 75 ? 'var(--green)' : overallPerc >= 65 ? 'var(--orange)' : 'var(--red)';
-    ring.setAttribute('stroke', ringCol);
-    document.getElementById('dashOverallPerc').style.color = ringCol;
+    if (ring) {
+        ring.setAttribute('stroke-dashoffset', ringOffset);
+        const ringCol = overallPerc >= 75 ? 'var(--green)' : overallPerc >= 65 ? 'var(--orange)' : 'var(--red)';
+        ring.setAttribute('stroke', ringCol);
+    }
     
     const label = document.getElementById('dashOverallSvgLabel');
     if (label) {
         label.textContent = `${Math.round(overallPerc)}%`;
-        label.style.color = ringCol;
     }
 
     // Set feedback label
     const feedbackLbl = document.getElementById('dashOverallStatus');
     const helpText = document.getElementById('dashOverallHelpText');
-    if (overallPerc >= 75) {
-        feedbackLbl.textContent = "Safe Zone";
-        feedbackLbl.className = "hero-badge safe";
-        if (helpText) helpText.textContent = "Great job! Keep it up.";
-    } else if (overallPerc >= 65) {
-        feedbackLbl.textContent = "Warning Zone";
-        feedbackLbl.className = "hero-badge warning";
-        if (helpText) helpText.textContent = "Need 75% to stay safe";
-    } else {
-        feedbackLbl.textContent = "Critical Zone";
-        feedbackLbl.className = "hero-badge critical";
-        if (helpText) helpText.textContent = "Bunks not allowed! Missed too many.";
+    if (feedbackLbl) {
+        if (overallPerc >= 75) {
+            feedbackLbl.textContent = "Safe Zone";
+            feedbackLbl.className = "hero-badge safe";
+            if (helpText) helpText.textContent = "Great job! Keep it up.";
+        } else if (overallPerc >= 65) {
+            feedbackLbl.textContent = "Warning Zone";
+            feedbackLbl.className = "hero-badge warning";
+            if (helpText) helpText.textContent = "Need 75% to stay safe";
+        } else {
+            feedbackLbl.textContent = "Critical Zone";
+            feedbackLbl.className = "hero-badge critical";
+            if (helpText) helpText.textContent = "Bunks not allowed! Missed too many.";
+        }
+    }
+
+    // Update Recommendation Card directly (Stitch Style)
+    const recTitleEl = document.getElementById('dashRecTitle');
+    const recSubEl = document.getElementById('dashRecSub');
+    const recCardEl = document.getElementById('dashboardRecommendationCard');
+    if (recTitleEl && recSubEl) {
+        if (overallPerc >= 75) {
+            recTitleEl.textContent = "Maintain Safe Zone";
+            recSubEl.textContent = "Great job! Keep attending your classes to stay above 75%.";
+            if (recCardEl) {
+                recCardEl.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+                recCardEl.style.boxShadow = '0 10px 24px rgba(16, 185, 129, 0.2)';
+            }
+        } else {
+            const mustAttendOverall = Math.ceil((0.75 * totalHeld - totalPresent) / 0.25);
+            if (mustAttendOverall > 0) {
+                recTitleEl.textContent = `Attend Next ${mustAttendOverall} Lectures`;
+                recSubEl.textContent = `To bring your overall score back to the 75% safe zone.`;
+            } else {
+                recTitleEl.textContent = "Attend Next 1 Lecture";
+                recSubEl.textContent = "To stay in the safe zone.";
+            }
+            if (recCardEl) {
+                recCardEl.style.background = 'linear-gradient(135deg, #7B61FF 0%, #5B4CF0 100%)';
+                recCardEl.style.boxShadow = '0 10px 24px rgba(91, 76, 240, 0.2)';
+            }
+        }
     }
 
     // Held stats fields
@@ -1657,14 +1685,19 @@ function renderDashboard() {
                 // Classes list for that day
                 let classesHtml = '<div class="day-classes-list">';
                 dayData.classes.forEach(c => {
-                    const isPresent = c.status === 'P' || c.status.toUpperCase() === 'PRESENT';
+                    const statusLower = c.status ? c.status.toLowerCase() : '';
+                    const isPresent = statusLower === 'p' || statusLower === 'present';
+                    const isAbsent = statusLower === 'a' || statusLower === 'absent';
+                    const statusText = isPresent ? 'Present' : (isAbsent ? 'Absent' : 'Pending');
+                    const statusClass = isPresent ? 'present' : (isAbsent ? 'absent' : 'pending');
+
                     classesHtml += `
                         <div class="day-class-item" onclick="showSubjectDetail('${c.subject_name}')" style="cursor: pointer;">
                             <div class="day-class-info">
                                 <span class="day-class-subject">${c.subject_name}</span>
                                 <span class="day-class-period">Period ${c.period_no || '--'}</span>
                             </div>
-                            <span class="day-class-status ${isPresent ? 'present' : 'absent'}">${c.status}</span>
+                            <span class="day-class-status ${statusClass}">${statusText}</span>
                         </div>
                     `;
                 });
@@ -1693,23 +1726,48 @@ function renderSubjects() {
 
     summaryData.forEach(s => {
         const percCol = s.percentage >= 75 ? 'var(--green)' : s.percentage >= 65 ? 'var(--orange)' : 'var(--red)';
+        
+        // Generate a dynamic code (e.g. "Basic Computer Engineering" -> "BCE")
+        const words = s.subject_name.split(/[\s-]+/);
+        let code = words.map(w => w[0]).join('').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (code.length === 0) code = 'SUB';
+        if (code.length > 5) code = code.slice(0, 5);
+
+        // Circular progress ring calculations (radius = 26, circumference = 163.36)
+        const radius = 26;
+        const circumference = 2 * Math.PI * radius; // ~163.36
+        const offset = circumference - (circumference * Math.min(s.percentage, 100) / 100);
+
         const card = document.createElement('div');
-        card.className = 'subj-row';
+        card.className = 'glass-card subj-card';
         card.onclick = () => showSubjectDetail(s.subject_name);
         card.innerHTML = `
-            <div class="subj-row-top">
-                <div class="subj-row-info">
-                    <div class="subj-row-icon">📚</div>
-                    <div class="subj-row-details">
-                        <div class="subj-row-name">${s.subject_name}</div>
-                        <div class="subj-row-stats">Held: <span>${s.held}</span> • Attended: <span class="pres">${s.present}</span> • Missed: <span class="abs">${s.absent}</span></div>
-                    </div>
+            <div class="subj-card-header">
+                <div class="subj-card-info">
+                    <span class="subj-card-code">${code}</span>
+                    <h3 class="subj-card-title">${s.subject_name}</h3>
                 </div>
-                <div class="subj-row-perc" style="color: ${percCol};">${s.percentage.toFixed(1)}%</div>
-                <div class="subj-row-arrow">></div>
+                <div class="subj-card-ring-box">
+                    <svg viewBox="0 0 64 64" style="width: 52px; height: 52px; transform: rotate(-90deg);">
+                        <circle cx="32" cy="32" r="26" style="fill: none; stroke: var(--border); stroke-width: 4.5px;" />
+                        <circle cx="32" cy="32" r="26" style="fill: none; stroke-width: 4.5px; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease-in-out;" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke="${percCol}" />
+                    </svg>
+                    <span class="subj-card-perc-text" style="color: ${percCol}">${Math.round(s.percentage)}%</span>
+                </div>
             </div>
-            <div class="subj-row-progress">
-                <div class="subj-row-fill" style="width: ${s.percentage}%; background: ${percCol};"></div>
+            <div class="subj-card-stats-grid">
+                <div class="subj-stat-box">
+                    <span class="subj-stat-label">HELD</span>
+                    <span class="subj-stat-value">${s.held}</span>
+                </div>
+                <div class="subj-stat-box" style="border-bottom: 2px solid ${percCol};">
+                    <span class="subj-stat-label">ATTENDED</span>
+                    <span class="subj-stat-value" style="color: ${percCol}">${s.present}</span>
+                </div>
+                <div class="subj-stat-box">
+                    <span class="subj-stat-label">MISSED</span>
+                    <span class="subj-stat-value">${s.absent}</span>
+                </div>
             </div>
         `;
         container.appendChild(card);
@@ -1990,12 +2048,11 @@ function renderSubjectDetail(subjectName) {
     const ring = document.getElementById('detailSubjectSvgRing');
     const label = document.getElementById('detailSubjectSvgLabel');
     if (ring && label) {
-        const offset = 201.06 - (201.06 * Math.min(subSummary.percentage, 100)) / 100;
+        const offset = 263.89 - (263.89 * Math.min(subSummary.percentage, 100)) / 100;
         ring.setAttribute('stroke-dashoffset', offset);
         const color = subSummary.percentage >= 75 ? 'var(--green)' : subSummary.percentage >= 65 ? 'var(--orange)' : 'var(--red)';
         ring.setAttribute('stroke', color);
         label.textContent = `${Math.round(subSummary.percentage)}%`;
-        label.style.color = color;
     }
 
     const badge = document.getElementById('detailSubjectStatus');

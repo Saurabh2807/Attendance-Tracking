@@ -223,13 +223,13 @@
         <!-- Header Section -->
         <div class="header">
             <div class="hinner">
-                <button class="header-menu-btn" onclick="toggleSettingsMenu()">
-                    <svg viewBox="0 0 24 24" width="22" height="22">
-                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" fill="currentColor"/>
+                <div class="header-logo-container" style="display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="color: var(--primary);">
+                        <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z M5 13.18v4L12 21l7-3.82v-4L12 17L5 13.18z"/>
                     </svg>
-                </button>
-                <div class="header-logo">
-                    <span>Attend<span>Ease</span></span>
+                    <div class="header-logo" style="font-size: 1.25rem;">
+                        Attend<span>Ease</span>
+                    </div>
                 </div>
                 <button class="header-bell-btn">
                     <svg viewBox="0 0 24 24" width="22" height="22">
@@ -241,6 +241,7 @@
 
             <!-- Hidden components to maintain script.js pointer bindings without errors -->
             <div style="display:none">
+                <button class="header-menu-btn" onclick="toggleSettingsMenu()"></button>
                 <span id="syncStatusDot"></span>
                 <span id="syncStatusLbl"></span>
                 <button id="syncBtn"></button>
@@ -251,15 +252,15 @@
             
             <!-- 1. DASHBOARD VIEW (HOME) -->
             <div id="v-overview" class="view act">
-                <!-- Welcome card -->
-                <div class="card" style="padding: 16px;">
-                    <div class="welcome-row">
-                        <div class="avatar" id="studentAvatar">🎓</div>
-                        <div class="welcome-text">
-                            <h2 id="headerWelcome">Hello, Student 👋</h2>
-                            <p id="headerLastSync">Good Morning</p>
-                        </div>
+                <!-- Welcome Section (Stitch Style) -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; padding: 0 4px;">
+                    <div>
+                        <p style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-sec); margin-bottom: 2px;">WELCOME BACK,</p>
+                        <h2 id="headerWelcome" style="font-size: 1.6rem; font-weight: 800; color: var(--text); margin: 0;">Student Name</h2>
                     </div>
+                    <p id="headerLastSync" style="font-size: 0.74rem; color: var(--text-sec); font-weight: 500; display: flex; align-items: center; gap: 4px; margin: 0 0 4px 0;">
+                        Last Sync: --
+                    </p>
                 </div>
 
                 <!-- Fallback / Empty state -->
@@ -272,68 +273,76 @@
 
                 <!-- Live stats container -->
                 <div id="dashboardStats" style="display: none;">
-                    <!-- Attendance Hero Card -->
-                    <div class="card hero-card">
-                        <div class="hero-left">
-                            <span class="hero-title">Attendance Score</span>
-                            <span class="hero-perc" id="dashOverallPerc">0.0%</span>
-                            <span class="hero-badge safe" id="dashOverallStatus">Safe Zone</span>
-                            <span class="hero-sub" id="dashOverallHelpText">Need 75% to stay safe</span>
-                        </div>
-                        <div class="hero-right">
-                            <div class="ring-box">
-                                <svg viewBox="0 0 80 80">
-                                    <circle cx="40" cy="40" r="32" class="ring-bg" />
-                                    <circle cx="40" cy="40" r="32" class="ring-fill" stroke-dasharray="201.06" stroke-dashoffset="201.06" id="dashOverallSvgRing" />
+                    <!-- Main Dashboard Card: Attendance Score (Stitch Style) -->
+                    <div class="card hero-card" style="padding: 24px; margin-bottom: 8px; overflow: hidden; position: relative;">
+                        <!-- Absolute glow blur inside the card -->
+                        <div style="position: absolute; -top: 48px; -right: 48px; width: 128px; height: 128px; background: var(--primary-light); opacity: 0.4; border-radius: 50%; filter: blur(32px); pointer-events: none;"></div>
+                        
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; position: relative; z-index: 10;">
+                            <!-- Left: Circular Attendance Indicator -->
+                            <div style="position: relative; width: 110px; height: 110px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                                    <circle cx="50" cy="50" r="42" style="fill: none; stroke: var(--border); stroke-width: 8px;" />
+                                    <circle cx="50" cy="50" r="42" style="fill: none; stroke-width: 8px; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease-in-out;" stroke-dasharray="263.89" stroke-dashoffset="263.89" id="dashOverallSvgRing" />
                                 </svg>
-                                <div class="ring-icon" id="dashOverallSvgLabel">
-                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                                        <path d="m9 11 2 2 4-4"/>
-                                    </svg>
+                                <div id="dashOverallPerc" style="position: absolute; font-size: 1.2rem; font-weight: 800; color: var(--text);">0.0%</div>
+                            </div>
+                            
+                            <!-- Right: Stats List Table -->
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(119, 117, 135, 0.15); padding-bottom: 4px;">
+                                    <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px;">TOTAL</span>
+                                    <span id="dashClassesHeld" style="font-size: 1rem; font-weight: 800; color: var(--text);">0</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(119, 117, 135, 0.15); padding-bottom: 4px;">
+                                    <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px;">PRESENT</span>
+                                    <span id="dashClassesPresent" style="font-size: 1rem; font-weight: 800; color: var(--green);">0</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px;">
+                                    <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px;">ABSENT</span>
+                                    <span id="dashClassesAbsent" style="font-size: 1rem; font-weight: 800; color: var(--red);">0</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Quick Stats Grid -->
-                    <div class="quick-stats-grid">
-                        <div class="stat-box">
-                            <span class="stat-icon" style="color: var(--primary);">📊</span>
-                            <span class="stat-num" id="dashClassesHeld">0</span>
-                            <span class="stat-lbl">Total Classes</span>
+                    <!-- Recommendation Section (Stitch Style) -->
+                    <div style="margin-top: 16px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-left: 4px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="color: var(--primary);">
+                                <path d="M12 2L14.8 8.6L22 9.2L16.5 14L18.2 21L12 17.2L5.8 21L7.5 14L2 9.2L9.2 8.6L12 2z"/>
+                            </svg>
+                            <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--text); margin: 0;">Recommendation</h3>
                         </div>
-                        <div class="stat-box">
-                            <span class="stat-icon" style="color: var(--green);">✅</span>
-                            <span class="stat-num" id="dashClassesPresent">0</span>
-                            <span class="stat-lbl">Present</span>
-                        </div>
-                        <div class="stat-box">
-                            <span class="stat-icon" style="color: var(--red);">❌</span>
-                            <span class="stat-num" id="dashClassesAbsent">0</span>
-                            <span class="stat-lbl">Absent</span>
+                        <div id="dashboardRecommendationCard" class="card" style="background: linear-gradient(135deg, #7B61FF 0%, #5B4CF0 100%); color: #FFFFFF; border: none; padding: 20px; border-radius: 20px; box-shadow: 0 10px 24px rgba(91, 76, 240, 0.25); position: relative; overflow: hidden;">
+                            <div style="position: relative; z-index: 10; max-width: 85%;">
+                                <h4 id="dashRecTitle" style="font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; color: #FFFFFF;">Attend Next 4 Lectures</h4>
+                                <p id="dashRecSub" style="font-size: 0.78rem; opacity: 0.9; line-height: 1.4; color: #FFFFFF; margin: 0;">To bring your overall score back to the 75% safe zone.</p>
+                            </div>
+                            <div style="position: absolute; right: -20px; bottom: -20px; width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(16px); pointer-events: none;"></div>
                         </div>
                     </div>
 
-                    <!-- Insights Preview Title -->
-                    <div class="preview-header">
-                        <span class="preview-title">Insights</span>
-                        <span class="preview-link" onclick="go('insights', document.querySelectorAll('.ntab')[3])">View All</span>
-                    </div>
-                    
-                    <!-- Insights Preview Container -->
-                    <div id="dashInsightsPreviewList" style="display: flex; flex-direction: column; gap: 10px;">
-                        <!-- Top 2 insights rendered dynamically -->
-                    </div>
-
-                    <!-- Daily Logs Title -->
-                    <div class="preview-header">
-                        <span class="preview-title">Daily Logs Overview</span>
-                        <span class="preview-link" onclick="go('subjects', document.querySelectorAll('.ntab')[1])">View Details →</span>
+                    <!-- Daily Logs Section Header (Stitch Style) -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 16px; margin-bottom: 12px; padding-left: 4px;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="color: var(--text-sec);">
+                            <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
+                        </svg>
+                        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--text); margin: 0;">Daily Logs</h3>
                     </div>
                     
                     <!-- Daily Logs List -->
                     <div id="dashDailyLogsList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                </div>
+
+                <!-- Hidden components to maintain script.js pointer bindings without errors -->
+                <div style="display:none">
+                    <span id="studentAvatar"></span>
+                    <span id="dashOverallStatus"></span>
+                    <span id="dashOverallHelpText"></span>
+                    <div id="dashOverallSvgLabel"></div>
+                    <div class="quick-stats-grid"></div>
+                    <div id="dashInsightsPreviewList"></div>
                 </div>
             </div>
 
@@ -358,38 +367,40 @@
                     </div>
                 </div>
 
-                <!-- Subject Progress Ring Card -->
-                <div class="card hero-card" style="padding: 20px;">
-                    <div class="hero-left">
-                        <span class="hero-title" style="font-size: 0.65rem;">Course Attendance</span>
-                        <span class="hero-perc" id="detailSubjectPerc" style="font-size: 2.1rem;">0.0%</span>
-                        <span class="hero-badge safe" id="detailSubjectStatus">Good</span>
-                    </div>
-                    <div class="hero-right">
-                        <div class="ring-box" style="width: 80px; height: 80px;">
-                            <svg viewBox="0 0 80 80">
-                                <circle cx="40" cy="40" r="32" class="ring-bg" />
-                                <circle cx="40" cy="40" r="32" class="ring-fill" stroke-dasharray="201.06" stroke-dashoffset="201.06" id="detailSubjectSvgRing" />
+                <!-- Subject Stats Card (Stitch style) -->
+                <div class="card" style="padding: 24px; margin-bottom: 16px; overflow: hidden; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; position: relative; z-index: 10;">
+                        <!-- Left: Circular Attendance Indicator -->
+                        <div style="position: relative; width: 110px; height: 110px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                                <circle cx="50" cy="50" r="42" style="fill: none; stroke: var(--border); stroke-width: 8px;" />
+                                <circle cx="50" cy="50" r="42" style="fill: none; stroke-width: 8px; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease-in-out;" stroke-dasharray="263.89" stroke-dashoffset="263.89" id="detailSubjectSvgRing" />
                             </svg>
-                            <div class="ring-icon" id="detailSubjectSvgLabel" style="font-size: 1.1rem; font-weight: 800;">0%</div>
+                            <div id="detailSubjectPerc" style="position: absolute; font-size: 1.2rem; font-weight: 800; color: var(--text);">0.0%</div>
+                        </div>
+                        
+                        <!-- Right: Stats List Table -->
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(119, 117, 135, 0.15); padding-bottom: 4px;">
+                                <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px;">TOTAL</span>
+                                <span id="detailClassesHeld" style="font-size: 1rem; font-weight: 800; color: var(--text);">0</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(119, 117, 135, 0.15); padding-bottom: 4px;">
+                                <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px;">PRESENT</span>
+                                <span id="detailClassesPresent" style="font-size: 1rem; font-weight: 800; color: var(--green);">0</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px;">
+                                <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px;">ABSENT</span>
+                                <span id="detailClassesAbsent" style="font-size: 1rem; font-weight: 800; color: var(--red);">0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Grid Details -->
-                <div class="quick-stats-grid">
-                    <div class="stat-box">
-                        <span class="stat-num" id="detailClassesHeld">0</span>
-                        <span class="stat-lbl">Held</span>
-                    </div>
-                    <div class="stat-box" style="border-color: rgba(46, 204, 113, 0.15);">
-                        <span class="stat-num" style="color: var(--green);" id="detailClassesPresent">0</span>
-                        <span class="stat-lbl">Attended</span>
-                    </div>
-                    <div class="stat-box" style="border-color: rgba(231, 76, 60, 0.15);">
-                        <span class="stat-num" style="color: var(--red);" id="detailClassesAbsent">0</span>
-                        <span class="stat-lbl">Missed</span>
-                    </div>
+                <!-- Hidden components to maintain script.js bindings -->
+                <div style="display: none;">
+                    <span id="detailSubjectStatus"></span>
+                    <div id="detailSubjectSvgLabel"></div>
                 </div>
 
                 <!-- Recovery Recommendations -->
