@@ -1,27 +1,54 @@
 :root, .lm {
-    --primary: #5B4CF0;
-    --primary-light: rgba(91, 76, 240, 0.08);
+    --primary: #422cd8;
+    --primary-light: rgba(66, 44, 216, 0.08);
     --primary-glow: rgba(91, 76, 240, 0.15);
-    --bg: #F8F9FD;
-    --card: #FFFFFF;
-    --text: #1F1A3A;
-    --text-sec: #7E7A94;
-    --text-muted: #B3AFCB;
-    --border: #F0EFF4;
-    --green: #2ECC71;
-    --green-dim: rgba(46, 204, 113, 0.1);
-    --orange: #E67E22;
-    --orange-dim: rgba(230, 126, 34, 0.1);
-    --red: #E74C3C;
-    --red-dim: rgba(231, 76, 60, 0.1);
+    --primary-container: #5b4cf0;
+    --bg: #fcf9f8;
+    --card: rgba(255, 255, 255, 0.7);
+    --text: #1c1b1b;
+    --text-sec: #474555;
+    --text-muted: #777587;
+    --border: rgba(255, 255, 255, 0.4);
+    --green: #10B981;
+    --green-dim: rgba(16, 185, 129, 0.1);
+    --orange: #F59E0B;
+    --orange-dim: rgba(245, 158, 11, 0.1);
+    --red: #EF4444;
+    --red-dim: rgba(239, 68, 68, 0.1);
     --blue: #3498DB;
     --blue-dim: rgba(52, 152, 219, 0.1);
-    --radius: 20px;
-    --radius-lg: 24px;
-    --shadow: 0 10px 30px rgba(91, 76, 240, 0.04);
-    --shadow-card: 0 6px 20px rgba(91, 76, 240, 0.05);
+    --radius: 24px;
+    --radius-lg: 32px;
+    --shadow: 0 10px 30px rgba(66, 44, 216, 0.04);
+    --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.05);
     --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.02);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --glass-stroke: rgba(255, 255, 255, 0.4);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+}
+
+body:not(.lm) {
+    --primary: #c4c0ff;
+    --primary-light: rgba(196, 192, 255, 0.1);
+    --primary-glow: rgba(196, 192, 255, 0.2);
+    --primary-container: #5b4cf0;
+    --bg: #121118;
+    --card: rgba(26, 25, 35, 0.75);
+    --text: #f3f0ef;
+    --text-sec: #c8c4d8;
+    --text-muted: #777587;
+    --border: rgba(255, 255, 255, 0.08);
+    --green: #10B981;
+    --green-dim: rgba(16, 185, 129, 0.15);
+    --orange: #F59E0B;
+    --orange-dim: rgba(245, 158, 11, 0.15);
+    --red: #EF4444;
+    --red-dim: rgba(239, 68, 68, 0.15);
+    --blue: #3498DB;
+    --blue-dim: rgba(52, 152, 219, 0.15);
+    --glass-stroke: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(26, 25, 35, 0.75);
+    --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -43,18 +70,16 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    background: #EAEBF2;
+    background: radial-gradient(circle at 15% 15%, rgba(66, 44, 216, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.03) 0%, transparent 40%),
+                #EAEBF2;
+    transition: background 0.3s ease;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--text-muted);
-    border-radius: 4px;
+body:not(.lm) {
+    background: radial-gradient(circle at 15% 15%, rgba(196, 192, 255, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(255, 182, 146, 0.02) 0%, transparent 40%),
+                #0a090e;
 }
 
 /* Viewport Shell */
@@ -70,9 +95,48 @@ body {
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(91, 76, 240, 0.09);
+    box-shadow: 0 24px 64px rgba(66, 44, 216, 0.08);
     border-radius: 28px;
     border: 6px solid #FFFFFF;
+    transition: var(--transition);
+}
+
+body:not(.lm) #ob, body:not(.lm) #app {
+    border: 6px solid #181721;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+}
+
+#ob::before, #app::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    left: -80px;
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(66, 44, 216, 0.12) 0%, rgba(66, 44, 216, 0) 70%);
+    border-radius: 50%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+#ob::after, #app::after {
+    content: '';
+    position: absolute;
+    bottom: -100px;
+    right: -100px;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0) 70%);
+    border-radius: 50%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+body:not(.lm) #ob::before, body:not(.lm) #app::before {
+    background: radial-gradient(circle, rgba(196, 192, 255, 0.08) 0%, rgba(196, 192, 255, 0) 70%);
+}
+body:not(.lm) #ob::after, body:not(.lm) #app::after {
+    background: radial-gradient(circle, rgba(255, 182, 146, 0.05) 0%, rgba(255, 182, 146, 0) 70%);
 }
 
 @media (max-width: 480px) {
@@ -231,8 +295,10 @@ body {
 .dinput {
     width: 100%;
     padding: 14px 16px;
-    border-radius: 14px;
-    background: var(--card);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1.5px solid var(--border);
     color: var(--text);
     font-size: 0.9rem;
@@ -242,10 +308,15 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
+body:not(.lm) .dinput {
+    background: rgba(255, 255, 255, 0.03);
+}
+
 .dinput:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
+    background: var(--card);
+    box-shadow: 0 0 0 4px var(--primary-light);
 }
 
 /* Custom OTP fields */
@@ -259,8 +330,10 @@ body {
 .otp-box {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 12px;
-    background: var(--card);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1.5px solid var(--border);
     text-align: center;
     font-size: 1.3rem;
@@ -270,17 +343,22 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
+body:not(.lm) .otp-box {
+    background: rgba(255, 255, 255, 0.03);
+}
+
 .otp-box:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
+    background: var(--card);
+    box-shadow: 0 0 0 4px var(--primary-light);
 }
 
 /* Buttons */
 .btn {
     width: 100%;
     padding: 15px;
-    border-radius: 14px;
+    border-radius: 16px;
     border: none;
     font-size: 0.95rem;
     font-weight: 700;
@@ -297,13 +375,14 @@ body {
 }
 
 .btn-or {
-    background: var(--primary);
+    background: linear-gradient(135deg, #7B61FF 0%, #5B4CF0 100%);
     color: #FFFFFF;
-    box-shadow: 0 8px 24px rgba(91, 76, 240, 0.25);
+    box-shadow: 0 8px 24px rgba(91, 76, 240, 0.2);
 }
 
 .btn-or:hover {
-    background: #4B3CE3;
+    background: linear-gradient(135deg, #6C51F0 0%, #422CD8 100%);
+    box-shadow: 0 8px 28px rgba(91, 76, 240, 0.3);
 }
 
 .btn-google {
@@ -314,7 +393,11 @@ body {
 }
 
 .btn-google:hover {
-    background: var(--bg);
+    background: rgba(255, 255, 255, 0.85);
+}
+
+body:not(.lm) .btn-google:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .auth-divider {
@@ -418,8 +501,10 @@ body {
 }
 
 .header {
-    background: var(--card);
-    border-bottom: 1.5px solid var(--border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--glass-stroke);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -511,6 +596,12 @@ body {
 }
 
 /* ---- CARDS & COMPONENT DESIGNS ---- */
+.card, .subj-row, .insight-card, .settings-menu, .hist-item, .recover-card, .modal, .day-card {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 2;
+}
+
 .card {
     background: var(--card);
     border-radius: var(--radius);
@@ -901,7 +992,7 @@ body {
     stroke-width: 3px;
     stroke-linecap: round;
     stroke-linejoin: round;
-    filter: drop-shadow(0px 4px 8px rgba(91, 76, 240, 0.15));
+    filter: drop-shadow(0px 4px 10px rgba(66, 44, 216, 0.25));
 }
 
 .chart-area {
@@ -911,8 +1002,8 @@ body {
 
 .chart-point {
     fill: var(--primary);
-    stroke: #FFFFFF;
-    stroke-width: 2px;
+    stroke: var(--bg);
+    stroke-width: 2.5px;
 }
 
 .chart-label {
@@ -1050,13 +1141,15 @@ body {
     left: 0;
     right: 0;
     z-index: 500;
-    background: var(--card);
-    border-top: 1.5px solid var(--border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--glass-stroke);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     height: 72px;
     padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.04);
 }
 
 .ntab {
@@ -1075,6 +1168,7 @@ body {
 
 .ntab.act {
     color: var(--primary);
+    text-shadow: 0 0 10px rgba(66, 44, 216, 0.15);
 }
 
 .nav-icon {
@@ -1098,12 +1192,12 @@ body {
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: var(--primary);
+    background: linear-gradient(135deg, #7B61FF 0%, #5B4CF0 100%);
     color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 20px rgba(91, 76, 240, 0.35);
+    box-shadow: 0 8px 24px rgba(91, 76, 240, 0.3);
     position: absolute;
     top: -20px;
     left: 50%;
@@ -1112,8 +1206,9 @@ body {
 }
 
 .sync-btn-circle:hover {
-    background: #4B3CE3;
+    background: linear-gradient(135deg, #6C51F0 0%, #422CD8 100%);
     transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 8px 28px rgba(91, 76, 240, 0.4);
 }
 
 .sync-btn-circle:active {
