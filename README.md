@@ -34,9 +34,11 @@ graph TD
 
 ## 📂 Project Structure
 - `index.html`: Main SPA application dashboard containing the HTML structure, onboarding steps, and visualizations.
-- `styles.css`: Custom premium-styled dashboard CSS with a clean dark/light theme, modern gradients, layout responsive designs.
+- `styles.css`: Custom premium-styled dashboard CSS implementing the **Stitch Vivid Lumina** theme with modern glassmorphism, responsive bento grids, and ambient gradient glowing blobs.
 - `script.js`: Core client-side javascript logic for routing, session management, chart rendering, database interactions, encryption/decryption, and service worker handling.
-- `manifest.json` & `service-worker.js`: PWA configuration for offline usability and install options.
+- `config.js`: Client-side configuration file containing Supabase endpoints and background sync worker integration URLs.
+- `manifest.json` & `service-worker.js`: PWA configuration for offline usability, caching strategies, and install prompts.
+- `ROLLBACK.md`: Disaster recovery instructions and commands to revert local or remote codebases back to stable check-pointed releases.
 - `supabase-migration.sql`: Database schema initialization script containing tables for `profiles`, `accsoft_connections`, `attendance_summary`, `attendance_logs`, RLS policies, and utility database triggers.
 - [sync-service/](file:///Users/saurabh/Downloads/Attendease/sync-service): Express backend API responsible for logging into Accsoft using Cheerio/Axios, extracting logs, and syncing to Supabase.
 - [accsoft-poc/](file:///Users/saurabh/Downloads/Attendease/accsoft-poc): A command-line proof of concept code verifying authentication scraper capabilities locally.
@@ -96,6 +98,6 @@ graph TD
 ---
 
 ## 🛠️ Tech Stack
-- **Frontend**: HTML5, Vanilla CSS3 (Custom Glassmorphic styles), ES6 Vanilla JavaScript, PWA Manifest + Service Worker.
+- **Frontend**: HTML5, Vanilla CSS3 (Custom Glassmorphic styles based on **Stitch Vivid Lumina** design system), ES6 Vanilla JavaScript, PWA Manifest + Service Worker.
 - **Backend Service**: Node.js, Express, Axios, Axios Cookiejar Support, Tough Cookie, Cheerio.
 - **Database**: PostgreSQL (Supabase), SQL Triggers, Pl/pgSQL.
