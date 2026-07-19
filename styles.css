@@ -1578,11 +1578,11 @@ input:checked + .slider:before {
 
 /* Subject Bento Card Styling (Stitch Style) */
 .subj-card {
-    padding: 20px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    margin-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 10px;
     border-radius: 20px !important;
 }
 .subj-card-header {
@@ -1627,7 +1627,7 @@ input:checked + .slider:before {
 }
 .subj-card-stats-grid {
     display: grid;
-    grid-template-cols: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
 }
 .subj-stat-box {
