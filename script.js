@@ -189,8 +189,7 @@ function loadCachedData(userId) {
         // If we have cached connection data, show the dashboard and render values immediately
         if (connectionData) {
             console.log("[CACHE] Rendering dashboard with cached data");
-            document.getElementById('ob').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
+            showDashboardView();
             
             // Set header labels
             const name = currentUser.user_metadata?.full_name || 'Student';
@@ -353,8 +352,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             if (sessionExists) {
                 console.log("[TIMEOUT] Session exists during safety timeout. Bypassing login redirect. Forcing app to ready.");
                 console.log("[AUTH] Redirecting to dashboard");
-                document.getElementById('ob').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
+                showDashboardView();
                 isAppReady = true;
                 isTimerDone = true;
                 checkAndHideSplash();
@@ -370,8 +368,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                     processedUserId = cachedUser.id;
                     
                     console.log("[AUTH] Redirecting to dashboard");
-                    document.getElementById('ob').style.display = 'none';
-                    document.getElementById('app').style.display = 'flex';
+                    showDashboardView();
                     
                     isAppReady = true;
                     isTimerDone = true;
@@ -910,8 +907,7 @@ async function checkConnectionAndLoadData(preloadedConn = null) {
             console.log("[PROFILE] User has AccSoft connection. Loading dashboard...");
             hideOfflineBanner();
             console.log("[AUTH] Redirecting to dashboard");
-            document.getElementById('ob').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
+            showDashboardView();
             
             // Set header labels
             const name = currentUser.user_metadata?.full_name || 'Student';
@@ -934,8 +930,7 @@ async function checkConnectionAndLoadData(preloadedConn = null) {
         if (currentUser) {
             // Bypass login redirect since session exists
             console.log("[AUTH] Redirecting to dashboard");
-            document.getElementById('ob').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
+            showDashboardView();
             
             isAppReady = true;
             isTimerDone = true;
@@ -2060,7 +2055,45 @@ function toggleTheme() {
     if (checkbox) checkbox.checked = on;
 }
 
-function go(v, el) {
+function initializeHistoryState() {
+    if (currentUser && !history.state) {
+        history.replaceState({ view: 'overview', subjectName: null }, '');
+    }
+}
+
+window.addEventListener('popstate', (event) => {
+    const appEl = document.getElementById('app');
+    if (!appEl || appEl.style.display === 'none') {
+        return;
+    }
+
+    const state = event.state;
+    if (state && state.view) {
+        if (state.view === 'subject-detail') {
+            showSubjectDetail(state.subjectName, false);
+        } else {
+            go(state.view, null, false);
+        }
+    } else {
+        if (currentUser) {
+            history.replaceState({ view: 'overview', subjectName: null }, '');
+            go('overview', null, false);
+        }
+    }
+});
+
+function showDashboardView() {
+    const obEl = document.getElementById('ob');
+    const appEl = document.getElementById('app');
+    if (obEl) obEl.style.display = 'none';
+    if (appEl) appEl.style.display = 'flex';
+    initializeHistoryState();
+}
+
+function go(v, el, pushToHistory = true) {
+    const currentActiveView = document.querySelector('.view.act');
+    const isNewView = !currentActiveView || currentActiveView.id !== 'v-' + v;
+
     document.querySelectorAll('.view').forEach(x => x.classList.remove('act'));
     document.querySelectorAll('.ntab').forEach(x => x.classList.remove('act'));
     
@@ -2068,20 +2101,37 @@ function go(v, el) {
     const detailView = document.getElementById('v-subject-detail');
     if (detailView) detailView.classList.remove('act');
     
-    document.getElementById('v-' + v).classList.add('act');
-    el.classList.add('act');
+    const targetViewEl = document.getElementById('v-' + v);
+    if (targetViewEl) targetViewEl.classList.add('act');
+    
+    if (el) {
+        el.classList.add('act');
+    } else {
+        // Activate bottom navigation tab based on v
+        let tabIndex = 0;
+        if (v === 'subjects') tabIndex = 1;
+        else if (v === 'insights') tabIndex = 3;
+        else if (v === 'settings') tabIndex = 4;
+        const tabs = document.querySelectorAll('.ntab');
+        if (tabs[tabIndex]) tabs[tabIndex].classList.add('act');
+    }
 
     if (v === 'overview') renderDashboard();
     if (v === 'subjects') renderSubjects();
     if (v === 'insights') renderInsights();
     if (v === 'settings') renderSettingsPage();
+
+    if (pushToHistory && isNewView) {
+        initializeHistoryState();
+        history.pushState({ view: v, subjectName: null }, '');
+    }
 }
 
 // ===== SUBJECT DETAIL & TREND CHART CONTROLLER =====
 let currentSubjectName = '';
 let showFullHistory = false;
 
-function showSubjectDetail(subjectName) {
+function showSubjectDetail(subjectName, pushToHistory = true) {
     currentSubjectName = subjectName;
     showFullHistory = false;
     
@@ -2089,11 +2139,19 @@ function showSubjectDetail(subjectName) {
     document.getElementById('v-subject-detail').classList.add('act');
     
     renderSubjectDetail(subjectName);
+
+    if (pushToHistory) {
+        initializeHistoryState();
+        history.pushState({ view: 'subject-detail', subjectName: subjectName }, '');
+    }
 }
 
 function closeSubjectDetail() {
-    document.getElementById('v-subject-detail').classList.remove('act');
-    document.getElementById('v-subjects').classList.add('act');
+    if (history.state && history.state.view === 'subject-detail') {
+        history.back();
+    } else {
+        go('subjects', null, true);
+    }
 }
 
 function renderSubjectDetail(subjectName) {
