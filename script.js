@@ -319,9 +319,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     
     // Light/Dark Theme Restore
     try {
-        const isLight = localStorage.getItem('ae_theme') === 'lm';
+        const savedTheme = localStorage.getItem('ae_theme');
+        const isLight = (savedTheme === null || savedTheme === 'lm');
         if (isLight) {
             document.body.classList.add('lm');
+        } else {
+            document.body.classList.remove('lm');
         }
         const checkbox = document.getElementById('themeBtn');
         if (checkbox) checkbox.checked = isLight;
@@ -377,7 +380,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                     // Set welcome header label
                     const name = cachedUser.user_metadata?.full_name || 'Student';
                     const welcomeEl = document.getElementById('headerWelcome');
-                    if (welcomeEl) welcomeEl.textContent = `Hi, ${name} 👋`;
+                    if (welcomeEl) welcomeEl.textContent = name;
                     
                     showOfflineBanner("Offline Mode - Reconnecting...");
                 } else {
@@ -907,6 +910,7 @@ async function checkConnectionAndLoadData(preloadedConn = null) {
             checkAndHideSplash();
         } else {
             console.log("[PROFILE] User has AccSoft connection. Loading dashboard...");
+            hideOfflineBanner();
             console.log("[AUTH] Redirecting to dashboard");
             document.getElementById('ob').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
@@ -1404,6 +1408,7 @@ async function refreshData() {
         renderHistory();
         renderInsights();
         renderSettingsPage();
+        hideOfflineBanner();
         console.log("[DASHBOARD] All UI elements successfully rendered.");
 
         // Save successfully loaded data to cache
@@ -1414,6 +1419,7 @@ async function refreshData() {
         console.error('[CONNECTION ERROR]', err);
         console.error('[SUMMARY ERROR]', err);
         console.error('[LOGS ERROR]', err);
+        showOfflineBanner("Offline Mode");
         toast("⚠️ Failed to load attendance data. Offline mode.");
         
         // Render dashboard with empty/offline states instead of throwing

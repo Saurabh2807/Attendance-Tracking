@@ -22,7 +22,7 @@
     <script src="config.js"></script>
 </head>
 
-<body>
+<body class="lm">
 
     <!-- ONBOARDING & AUTH VIEW -->
     <div id="ob" class="onboard">
@@ -412,7 +412,7 @@
                         <!-- Absolute glow blur inside the card -->
                         <div style="position: absolute; -top: 48px; -right: 48px; width: 128px; height: 128px; background: var(--primary-light); opacity: 0.4; border-radius: 50%; filter: blur(32px); pointer-events: none;"></div>
                         
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; position: relative; z-index: 10;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 48px; position: relative; z-index: 10;">
                             <!-- Left: Circular Attendance Indicator -->
                             <div style="position: relative; width: 110px; height: 110px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; transform: rotate(-90deg);">
@@ -423,7 +423,7 @@
                             </div>
                             
                             <!-- Right: Stats List Table -->
-                            <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 12px; margin-left: 12px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(119, 117, 135, 0.08); padding-bottom: 8px;">
                                     <span style="font-size: 0.76rem; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.6px;">TOTAL</span>
                                     <span id="dashClassesHeld" style="font-size: 1.05rem; font-weight: 800; color: var(--text);">0</span>
