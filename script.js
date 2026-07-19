@@ -192,8 +192,7 @@ function loadCachedData(userId) {
             showDashboardView();
             
             // Set header labels
-            const name = currentUser.user_metadata?.full_name || 'Student';
-            document.getElementById('headerWelcome').textContent = name;
+            updateWelcomeHeader(currentUser);
             
             const lastSyncEl = document.getElementById('headerLastSync');
             if (lastSyncEl) {
@@ -375,9 +374,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                     checkAndHideSplash();
                     
                     // Set welcome header label
-                    const name = cachedUser.user_metadata?.full_name || 'Student';
-                    const welcomeEl = document.getElementById('headerWelcome');
-                    if (welcomeEl) welcomeEl.textContent = name;
+                    updateWelcomeHeader(cachedUser);
                     
                     showOfflineBanner("Offline Mode - Reconnecting...");
                 } else {
@@ -910,8 +907,7 @@ async function checkConnectionAndLoadData(preloadedConn = null) {
             showDashboardView();
             
             // Set header labels
-            const name = currentUser.user_metadata?.full_name || 'Student';
-            document.getElementById('headerWelcome').textContent = name;
+            updateWelcomeHeader(currentUser);
             
             // Refresh local state lists
             pendingInitStep = 'load-attendance-data';
@@ -2400,6 +2396,41 @@ function fmtDateTime(isoStr) {
     hours = hours % 12;
     hours = hours ? hours : 12; // the hour '0' should be '12'
     return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+}
+
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'GOOD MORNING,';
+    if (hour < 17) return 'GOOD AFTERNOON,';
+    return 'GOOD EVENING,';
+}
+
+function getUserFriendlyName(user) {
+    if (!user) return 'Student';
+    if (user.user_metadata && user.user_metadata.full_name) {
+        return user.user_metadata.full_name;
+    }
+    if (user.user_metadata && user.user_metadata.name) {
+        return user.user_metadata.name;
+    }
+    if (user.email) {
+        const username = user.email.split('@')[0];
+        const parts = username.split(/[\._\-]/);
+        const formattedName = parts.map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(' ');
+        return formattedName;
+    }
+    return 'Student';
+}
+
+function updateWelcomeHeader(userObj = currentUser) {
+    const welcomeEl = document.getElementById('headerWelcome');
+    const greetingEl = document.getElementById('headerGreeting');
+    if (welcomeEl && userObj) {
+        welcomeEl.textContent = getUserFriendlyName(userObj);
+    }
+    if (greetingEl) {
+        greetingEl.textContent = getGreeting();
+    }
 }
 
 function timeAgo(dateString) {
