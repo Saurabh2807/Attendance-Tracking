@@ -139,14 +139,19 @@ body:not(.lm) #ob::after, body:not(.lm) #app::after {
     background: radial-gradient(circle, rgba(255, 182, 146, 0.05) 0%, rgba(255, 182, 146, 0) 70%);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+    body {
+        background: var(--bg) !important;
+    }
     #ob, #app {
-        max-width: 100%;
-        height: 100vh;
-        height: 100dvh;
-        max-height: 100%;
-        border-radius: 0;
-        border: none;
+        max-width: 100% !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 }
 
