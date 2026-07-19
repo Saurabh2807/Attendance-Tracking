@@ -1559,7 +1559,7 @@ input:checked + .slider:before {
     margin: 4px 2px !important;
 }
 .ntab.act {
-    background: var(--primary-container) !important;
+    background: linear-gradient(135deg, #7B61FF 0%, #5B4CF0 100%) !important;
     color: #FFFFFF !important;
     box-shadow: 0 4px 12px rgba(91, 76, 240, 0.25) !important;
 }
@@ -1792,4 +1792,20 @@ body:not(.lm) .onboard {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Bento Glass Card Styles */
+.bento-glass-card {
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: none !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.6) !important;
+    border-radius: 24px !important;
+}
+
+body:not(.lm) .bento-glass-card {
+    background: rgba(30, 30, 36, 0.45) !important;
+    border: none !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
 }

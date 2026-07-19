@@ -194,12 +194,11 @@ function loadCachedData(userId) {
             
             // Set header labels
             const name = currentUser.user_metadata?.full_name || 'Student';
-            document.getElementById('headerWelcome').textContent = `Hi, ${name} 👋`;
+            document.getElementById('headerWelcome').textContent = name;
             
             const lastSyncEl = document.getElementById('headerLastSync');
             if (lastSyncEl) {
-                const lastSyncStr = connectionData.last_sync_at ? fmtDateTime(connectionData.last_sync_at) : 'Never';
-                lastSyncEl.textContent = `Last Sync: ${lastSyncStr}`;
+                lastSyncEl.textContent = connectionData.last_sync_at ? `Last sync: ${timeAgo(connectionData.last_sync_at)}` : 'Never';
             }
 
             // Render cached data on UI panels
@@ -914,7 +913,7 @@ async function checkConnectionAndLoadData(preloadedConn = null) {
             
             // Set header labels
             const name = currentUser.user_metadata?.full_name || 'Student';
-            document.getElementById('headerWelcome').textContent = `Hi, ${name} 👋`;
+            document.getElementById('headerWelcome').textContent = name;
             
             // Refresh local state lists
             pendingInitStep = 'load-attendance-data';
@@ -1067,6 +1066,10 @@ async function triggerSyncNow() {
         }
         isSyncInProgress = true;
         console.log('[SYNC] Started');
+        
+        const syncIcon = document.getElementById('headerSyncIcon');
+        if (syncIcon) syncIcon.classList.add('spin-animation');
+
         const modal = document.getElementById('syncingModal');
         const stepLogin = document.getElementById('syncStepLogin');
         const stepFetch = document.getElementById('syncStepFetch');
@@ -1092,6 +1095,8 @@ async function triggerSyncNow() {
         const syncTimeout = setTimeout(() => {
             if (!isSyncFinished) {
                 console.error('[SYNC] Timeout');
+                const sIcon = document.getElementById('headerSyncIcon');
+                if (sIcon) sIcon.classList.remove('spin-animation');
                 modal.classList.add('hidden');
                 toast("Sync timed out. Please try again.");
                 isSyncFinished = true;
@@ -1102,6 +1107,8 @@ async function triggerSyncNow() {
 
         if (!supabaseClient) {
             clearTimeout(syncTimeout);
+            const sIcon = document.getElementById('headerSyncIcon');
+            if (sIcon) sIcon.classList.remove('spin-animation');
             isSyncFinished = true;
             isSyncInProgress = false; // Reset lock
             modal.classList.add('hidden');
@@ -1272,6 +1279,8 @@ async function triggerSyncNow() {
             text.textContent = '3 / 3';
 
             setTimeout(() => {
+                const sIcon = document.getElementById('headerSyncIcon');
+                if (sIcon) sIcon.classList.remove('spin-animation');
                 modal.classList.add('hidden');
                 toast("✅ Sync completed successfully!");
                 refreshData();
@@ -1283,6 +1292,8 @@ async function triggerSyncNow() {
         } catch (err) {
             console.error('[DIAGNOSTIC] fetch failed', err);
             console.log('[SEQUENTIAL] G: after fetch (failed)');
+            const sIcon = document.getElementById('headerSyncIcon');
+            if (sIcon) sIcon.classList.remove('spin-animation');
             if (isSyncFinished) return;
             clearTimeout(syncTimeout);
             progressIntervals.forEach(clearTimeout);
@@ -1298,6 +1309,8 @@ async function triggerSyncNow() {
 
     } catch (topErr) {
         console.error('[TOP-LEVEL EXCEPTION IN triggerSyncNow]', topErr);
+        const sIcon = document.getElementById('headerSyncIcon');
+        if (sIcon) sIcon.classList.remove('spin-animation');
         isSyncInProgress = false;
         throw topErr;
     }
@@ -1340,8 +1353,7 @@ async function refreshData() {
         const lastSyncEl = document.getElementById('headerLastSync');
         if (lastSyncEl) {
             if (connectionData) {
-                const lastSyncStr = connectionData.last_sync_at ? fmtDateTime(connectionData.last_sync_at) : 'Never';
-                lastSyncEl.textContent = `Last Sync: ${lastSyncStr}`;
+                lastSyncEl.textContent = connectionData.last_sync_at ? `Last sync: ${timeAgo(connectionData.last_sync_at)}` : 'Never';
             } else {
                 lastSyncEl.textContent = 'Not Connected';
             }
@@ -1666,23 +1678,30 @@ function renderDashboard() {
             topDates.forEach(date => {
                 const dayData = groupedLogs[date];
                 
-                // Format date label
-                const dow = DNAMES[new Date(date + 'T12:00:00').getDay()];
-                const formattedDate = `${fmtD(date)} • ${dow}`;
+                // Format date label to: OCT 24, THURSDAY
+                const dObj = new Date(date + 'T12:00:00');
+                const month = dObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+                const day = dObj.getDate();
+                const weekday = dObj.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+                const formattedDate = `${month} ${day}, ${weekday}`;
 
                 const card = document.createElement('div');
                 card.className = 'day-card';
                 
-                // Header with date and summary counts
+                // Header with date (no emoji/badges)
                 let headerHtml = `
-                    <div class="day-header">
-                        <span class="day-date-title">📅 ${formattedDate}</span>
-                        <div class="day-summary-badges">
-                            ${dayData.present > 0 ? `<span class="day-summary-badge present">${dayData.present} Pres</span>` : ''}
-                            ${dayData.absent > 0 ? `<span class="day-summary-badge absent">${dayData.absent} Abs</span>` : ''}
-                        </div>
+                    <div class="day-header" style="background: rgba(119, 117, 135, 0.06); padding: 12px 18px; border-bottom: 1px solid rgba(119, 117, 135, 0.08);">
+                        <span class="day-date-title" style="font-size: 0.72rem; font-weight: 800; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.8px;">${formattedDate}</span>
                     </div>
                 `;
+
+                // Helper to convert string to Title Case
+                const toTitleCase = str => {
+                    if (!str) return '';
+                    return str.toLowerCase().split(' ').map(word => {
+                        return word.charAt(0).toUpperCase() + word.slice(1);
+                    }).join(' ');
+                };
 
                 // Classes list for that day
                 let classesHtml = '<div class="day-classes-list">';
@@ -1694,12 +1713,11 @@ function renderDashboard() {
                     const statusClass = isPresent ? 'present' : (isAbsent ? 'absent' : 'pending');
 
                     classesHtml += `
-                        <div class="day-class-item" onclick="showSubjectDetail('${c.subject_name}')" style="cursor: pointer;">
-                            <div class="day-class-info">
-                                <span class="day-class-subject">${c.subject_name}</span>
-                                <span class="day-class-period">Period ${c.period_no || '--'}</span>
+                        <div class="day-class-item" onclick="showSubjectDetail('${c.subject_name}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid rgba(119, 117, 135, 0.06);">
+                            <div class="day-class-info" style="margin: 0; padding: 0; flex: 1;">
+                                <span class="day-class-subject" style="font-size: 0.92rem; font-weight: 700; color: var(--text);">${toTitleCase(c.subject_name)}</span>
                             </div>
-                            <span class="day-class-status ${statusClass}">${statusText}</span>
+                            <span class="day-class-status ${statusClass}" style="margin-left: 12px;">${statusText}</span>
                         </div>
                     `;
                 });
@@ -2320,6 +2338,20 @@ function fmtDateTime(isoStr) {
     hours = hours % 12;
     hours = hours ? hours : 12; // the hour '0' should be '12'
     return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+}
+
+function timeAgo(dateString) {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
 }
 
 function toast(m) {
