@@ -60,157 +60,287 @@
         <div class="ob-body" id="authScreens">
             <!-- 2. Welcome Screen -->
             <div id="welcomeScreen" class="auth-section" style="display:none">
-                <div style="text-align: center; margin: 48px 0 36px;">
-                    <div style="margin-bottom: 24px;">
-                        <svg viewBox="0 0 100 100" width="90" height="90">
-                            <rect x="10" y="10" width="80" height="80" rx="24" fill="url(#grad2)" />
-                            <path d="M50 32 L72 43 L50 54 L28 43 Z" fill="#FFFFFF" />
-                            <path d="M35 48.5 L35 62 C35 66, 65 66, 65 62 L65 48.5" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" />
-                            <path d="M66 46 L70 58 L72 58 L72 46" fill="#FFFFFF" />
-                            <circle cx="71" cy="58" r="2.5" fill="#FFFFFF" />
-                            <defs>
-                                <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#7B61FF" />
-                                    <stop offset="100%" stop-color="#5B4CF0" />
-                                </linearGradient>
-                            </defs>
+                <!-- Cap Logo and Tagline (Outside Card) -->
+                <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin: 32px 0 24px;">
+                    <div style="background: var(--primary-container); color: #FFFFFF; width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 8px 16px rgba(91, 76, 240, 0.25);">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
+                            <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z M5 13.18v4L12 21l7-3.82v-4L12 17L5 13.18z"/>
                         </svg>
                     </div>
-                    <h1 style="font-size: 1.8rem; font-weight: 900; letter-spacing: -0.5px; color: var(--text);">Attend<span>Ease</span></h1>
-                    <p style="font-size: 0.86rem; color: var(--text-sec); margin-top: 6px; font-weight: 500;">Your attendance. Synced.</p>
-                    <p style="font-size: 0.8rem; color: var(--text-sec); margin-top: 14px; line-height: 1.6; padding: 0 16px;">
-                        Connect your AccSoft account and get real-time attendance insights.
-                    </p>
+                    <h1 style="font-size: 1.8rem; font-weight: 900; color: var(--primary); margin: 0; letter-spacing: -0.5px;">AttendEase</h1>
+                    <p style="font-size: 1.05rem; font-weight: 800; color: var(--text); margin-top: 14px; margin-bottom: 0;">Effortless Attendance Tracking</p>
                 </div>
-                <button class="btn btn-or" onclick="showAuthTab('signup')" style="margin-bottom: 12px;">Sign Up</button>
-                <button class="btn btn-google" onclick="showAuthTab('login')">Log In</button>
-                <div style="text-align: center; margin-top: 48px; font-size: 0.72rem; color: var(--text-sec); font-weight: 600;">
-                    🛡️ Secure. Private. Trusted.
+
+                <!-- Onboarding Action Card -->
+                <div class="card" style="padding: 24px; border-radius: 24px; box-shadow: var(--shadow-card); background: var(--card); border: 1.5px solid var(--border);">
+                    <button class="btn btn-or" onclick="showAuthTab('signup')" style="margin-bottom: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        New User <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+                    </button>
+                    <button class="btn" onclick="showAuthTab('login')" style="background: none; border: 1.5px solid var(--primary); color: var(--primary); font-weight: 800; margin-bottom: 16px; box-shadow: none;">Log In</button>
+                    
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin: 20px 0; color: var(--text-sec); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                        <div style="flex: 1; height: 1.5px; background: rgba(119, 117, 135, 0.12);"></div>
+                        <span>OR CONTINUE WITH</span>
+                        <div style="flex: 1; height: 1.5px; background: rgba(119, 117, 135, 0.12);"></div>
+                    </div>
+                    
+                    <!-- Google sign-in button centered -->
+                    <div style="display: flex; justify-content: center;">
+                        <button onclick="handleGoogleSignIn()" style="background: #FFFFFF; border: 1.5px solid var(--border); padding: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 48px; height: 48px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                            <svg class="google-icon" viewBox="0 0 24 24" style="width:22px; height:22px;">
+                                <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 14.98 1 12 1 7.35 1 3.37 3.68 1.42 7.58l3.96 3.07C6.35 7.82 8.95 5.04 12 5.04z"/>
+                                <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.35H12v4.45h6.44c-.28 1.47-1.11 2.71-2.35 3.55l3.65 2.83c2.13-1.97 3.75-4.87 3.75-8.48z"/>
+                                <path fill="#FBBC05" d="M5.38 14.73c-.24-.73-.38-1.5-.38-2.3c0-.8.14-1.57.38-2.3L1.42 7.06C.51 8.88 0 10.9 0 13c0 2.1.51 4.12 1.42 5.94l3.96-3.21z"/>
+                                <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.65-2.83c-1.01.68-2.3 1.09-4.31 1.09-3.05 0-5.65-2.78-6.57-5.54L1.46 16.03C3.42 20.32 7.4 23 12 23z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Footer (Outside Card) -->
+                <div style="text-align: center; margin-top: 36px;">
+                    <div style="font-size: 0.65rem; color: var(--text-sec); font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;">
+                        SECURE • PRIVATE • TRUSTED
+                    </div>
+                    <div style="font-size: 0.65rem; color: var(--text-sec); font-weight: 500; margin-top: 4px;">
+                        &copy; 2024 AttendEase. All rights reserved.
+                    </div>
                 </div>
             </div>
 
             <!-- 3. Sign Up Screen -->
             <div id="signupScreen" class="auth-section" style="display:none">
-                <div class="ob-head">
-                    <button class="back-arrow" onclick="showAuthTab('welcome')">←</button>
-                    <div>
-                        <div class="auth-title">Create Account</div>
-                        <div class="auth-sub">Register to get started</div>
+                <!-- Cap Logo and Tagline (Outside Card) -->
+                <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin: 16px 0 16px;">
+                    <div style="background: var(--primary-container); color: #FFFFFF; width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 16px rgba(91, 76, 240, 0.25);">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                            <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z M5 13.18v4L12 21l7-3.82v-4L12 17L5 13.18z"/>
+                        </svg>
+                    </div>
+                    <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin: 0; letter-spacing: -0.5px;">AttendEase</h1>
+                    <p style="font-size: 0.72rem; font-weight: 600; color: var(--text-sec); margin-top: 4px; margin-bottom: 0; text-transform: uppercase; letter-spacing: 0.5px;">Empowering Academic Excellence</p>
+                </div>
+
+                <!-- Card container -->
+                <div class="card" style="padding: 24px; border-radius: 24px; box-shadow: var(--shadow-card); background: var(--card); border: 1.5px solid var(--border);">
+                    <div class="ob-head" style="margin-bottom: 20px;">
+                        <button class="back-arrow" onclick="showAuthTab('welcome')" style="background: rgba(119, 117, 135, 0.08); width: 36px; height: 36px; border-radius: 50%; border: none;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12,19 5,12 12,5"/></svg>
+                        </button>
+                        <div>
+                            <div class="auth-title" style="font-size: 1.35rem;">Create Account</div>
+                            <div class="auth-sub" style="font-size: 0.76rem;">Register to get started with your dashboard</div>
+                        </div>
+                    </div>
+                    
+                    <div class="fl">Full Name</div>
+                    <div style="position: relative; margin-bottom: 12px;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-sec); display: flex; align-items: center; pointer-events: none;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </span>
+                        <input type="text" class="dinput" id="signUpName" placeholder="Enter your name" style="padding-left: 44px; margin-bottom: 0;">
+                    </div>
+                    
+                    <div class="fl">Email Address</div>
+                    <div style="position: relative; margin-bottom: 16px;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-sec); display: flex; align-items: center; pointer-events: none;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </span>
+                        <input type="email" class="dinput" id="signUpEmail" placeholder="Enter your email" style="padding-left: 44px; margin-bottom: 0;">
+                    </div>
+                    
+                    <button class="btn btn-or" onclick="handleSendSignUpOtp()" style="margin-bottom: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        Send OTP <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+                    </button>
+                    
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin: 16px 0; color: var(--text-sec); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                        <div style="flex: 1; height: 1.5px; background: rgba(119, 117, 135, 0.12);"></div>
+                        <span>OR</span>
+                        <div style="flex: 1; height: 1.5px; background: rgba(119, 117, 135, 0.12);"></div>
+                    </div>
+                    
+                    <button class="btn" id="googleSignUpBtn" onclick="handleGoogleSignIn()" style="background: #FFFFFF; border: 1.5px solid var(--border); color: var(--text); font-weight: 800; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg class="google-icon" viewBox="0 0 24 24" style="width:18px; height:18px;">
+                            <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 14.98 1 12 1 7.35 1 3.37 3.68 1.42 7.58l3.96 3.07C6.35 7.82 8.95 5.04 12 5.04z"/>
+                            <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.35H12v4.45h6.44c-.28 1.47-1.11 2.71-2.35 3.55l3.65 2.83c2.13-1.97 3.75-4.87 3.75-8.48z"/>
+                            <path fill="#FBBC05" d="M5.38 14.73c-.24-.73-.38-1.5-.38-2.3c0-.8.14-1.57.38-2.3L1.42 7.06C.51 8.88 0 10.9 0 13c0 2.1.51 4.12 1.42 5.94l3.96-3.21z"/>
+                            <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.65-2.83c-1.01.68-2.3 1.09-4.31 1.09-3.05 0-5.65-2.78-6.57-5.54L1.46 16.03C3.42 20.32 7.4 23 12 23z"/>
+                        </svg>
+                        Continue with Google
+                    </button>
+                    
+                    <div style="text-align: center; font-size: 0.78rem; color: var(--text-sec); font-weight: 600;">
+                        Already have an account? <a href="#" onclick="showAuthTab('login')" style="color: var(--primary); font-weight: 800; text-decoration: none;">Log In</a>
                     </div>
                 </div>
-                
-                <div class="fl">Full Name</div>
-                <input type="text" class="dinput" id="signUpName" placeholder="Enter your name">
-                
-                <div class="fl">Email Address</div>
-                <input type="email" class="dinput" id="signUpEmail" placeholder="Enter your email">
-                
-                <button class="btn btn-or" onclick="handleSendSignUpOtp()" style="margin-top: 8px; margin-bottom: 16px;">Send OTP</button>
-                
-                <div class="auth-divider">OR</div>
-                
-                <button class="btn btn-google" id="googleSignUpBtn" onclick="handleGoogleSignIn()" style="margin-bottom: 24px;">
-                    <svg class="google-icon" viewBox="0 0 24 24" style="width:18px; height:18px; vertical-align:middle; margin-right:8px;">
-                        <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 14.98 1 12 1 7.35 1 3.37 3.68 1.42 7.58l3.96 3.07C6.35 7.82 8.95 5.04 12 5.04z"/>
-                        <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.35H12v4.45h6.44c-.28 1.47-1.11 2.71-2.35 3.55l3.65 2.83c2.13-1.97 3.75-4.87 3.75-8.48z"/>
-                        <path fill="#FBBC05" d="M5.38 14.73c-.24-.73-.38-1.5-.38-2.3c0-.8.14-1.57.38-2.3L1.42 7.06C.51 8.88 0 10.9 0 13c0 2.1.51 4.12 1.42 5.94l3.96-3.21z"/>
-                        <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.65-2.83c-1.01.68-2.3 1.09-4.31 1.09-3.05 0-5.65-2.78-6.57-5.54L1.46 16.03C3.42 20.32 7.4 23 12 23z"/>
-                    </svg>
-                    Continue with Google
-                </button>
-                
-                <div style="text-align: center; font-size: 0.8rem; color: var(--text-sec); font-weight: 500;">
-                    Already have an account? <a href="#" onclick="showAuthTab('login')" style="color: var(--primary); font-weight: 700; text-decoration: none;">Log In</a>
+
+                <!-- Footer (Outside Card) -->
+                <div style="text-align: center; margin-top: 24px; font-size: 0.65rem; color: var(--text-sec); font-weight: 500; padding: 0 16px; line-height: 1.4;">
+                    By signing up, you agree to AttendEase Terms of Service and Privacy Policy.
                 </div>
             </div>
 
             <!-- 4. Log In Screen -->
             <div id="loginScreen" class="auth-section" style="display:none">
-                <div class="ob-head">
-                    <button class="back-arrow" onclick="showAuthTab('welcome')">←</button>
-                    <div>
-                        <div class="auth-title">Welcome Back</div>
-                        <div class="auth-sub">Log in to continue</div>
+                <!-- Cap Logo and Tagline (Outside Card) -->
+                <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin: 16px 0 16px;">
+                    <div style="background: var(--primary-container); color: #FFFFFF; width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 16px rgba(91, 76, 240, 0.25);">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                            <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z M5 13.18v4L12 21l7-3.82v-4L12 17L5 13.18z"/>
+                        </svg>
                     </div>
+                    <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin: 0; letter-spacing: -0.5px;">AttendEase</h1>
+                    <p style="font-size: 0.72rem; font-weight: 600; color: var(--text-sec); margin-top: 4px; margin-bottom: 0; text-transform: uppercase; letter-spacing: 0.5px;">Empowering Academic Excellence</p>
                 </div>
-                
-                <div class="fl">Email Address</div>
-                <input type="email" class="dinput" id="loginEmail" placeholder="Enter your email">
-                
-                <button class="btn btn-or" onclick="handleSendLoginOtp()" style="margin-top: 8px; margin-bottom: 16px;">Send OTP</button>
-                
-                <div class="auth-divider">OR</div>
-                
-                <button class="btn btn-google" id="googleLoginBtn" onclick="handleGoogleSignIn()" style="margin-bottom: 24px;">
-                    <svg class="google-icon" viewBox="0 0 24 24" style="width:18px; height:18px; vertical-align:middle; margin-right:8px;">
-                        <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 14.98 1 12 1 7.35 1 3.37 3.68 1.42 7.58l3.96 3.07C6.35 7.82 8.95 5.04 12 5.04z"/>
-                        <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.35H12v4.45h6.44c-.28 1.47-1.11 2.71-2.35 3.55l3.65 2.83c2.13-1.97 3.75-4.87 3.75-8.48z"/>
-                        <path fill="#FBBC05" d="M5.38 14.73c-.24-.73-.38-1.5-.38-2.3c0-.8.14-1.57.38-2.3L1.42 7.06C.51 8.88 0 10.9 0 13c0 2.1.51 4.12 1.42 5.94l3.96-3.21z"/>
-                        <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.65-2.83c-1.01.68-2.3 1.09-4.31 1.09-3.05 0-5.65-2.78-6.57-5.54L1.46 16.03C3.42 20.32 7.4 23 12 23z"/>
-                    </svg>
-                    Continue with Google
-                </button>
-                
-                <div style="text-align: center; font-size: 0.8rem; color: var(--text-sec); font-weight: 500;">
-                    Don't have an account? <a href="#" onclick="showAuthTab('signup')" style="color: var(--primary); font-weight: 700; text-decoration: none;">Sign Up</a>
+
+                <!-- Card container -->
+                <div class="card" style="padding: 24px; border-radius: 24px; box-shadow: var(--shadow-card); background: var(--card); border: 1.5px solid var(--border);">
+                    <div class="ob-head" style="margin-bottom: 20px;">
+                        <button class="back-arrow" onclick="showAuthTab('welcome')" style="background: rgba(119, 117, 135, 0.08); width: 36px; height: 36px; border-radius: 50%; border: none;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12,19 5,12 12,5"/></svg>
+                        </button>
+                        <div>
+                            <div class="auth-title" style="font-size: 1.35rem;">Log In</div>
+                            <div class="auth-sub" style="font-size: 0.76rem;">Welcome back! Enter credentials to continue</div>
+                        </div>
+                    </div>
+                    
+                    <div class="fl">Email Address</div>
+                    <div style="position: relative; margin-bottom: 16px;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-sec); display: flex; align-items: center; pointer-events: none;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </span>
+                        <input type="email" class="dinput" id="loginEmail" placeholder="Enter your email" style="padding-left: 44px; margin-bottom: 0;">
+                    </div>
+                    
+                    <button class="btn btn-or" onclick="handleSendLoginOtp()" style="margin-bottom: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        Send OTP <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+                    </button>
+                    
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin: 16px 0; color: var(--text-sec); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                        <div style="flex: 1; height: 1.5px; background: rgba(119, 117, 135, 0.12);"></div>
+                        <span>OR</span>
+                        <div style="flex: 1; height: 1.5px; background: rgba(119, 117, 135, 0.12);"></div>
+                    </div>
+                    
+                    <button class="btn" id="googleLoginBtn" onclick="handleGoogleSignIn()" style="background: #FFFFFF; border: 1.5px solid var(--border); color: var(--text); font-weight: 800; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg class="google-icon" viewBox="0 0 24 24" style="width:18px; height:18px;">
+                            <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 14.98 1 12 1 7.35 1 3.37 3.68 1.42 7.58l3.96 3.07C6.35 7.82 8.95 5.04 12 5.04z"/>
+                            <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.35H12v4.45h6.44c-.28 1.47-1.11 2.71-2.35 3.55l3.65 2.83c2.13-1.97 3.75-4.87 3.75-8.48z"/>
+                            <path fill="#FBBC05" d="M5.38 14.73c-.24-.73-.38-1.5-.38-2.3c0-.8.14-1.57.38-2.3L1.42 7.06C.51 8.88 0 10.9 0 13c0 2.1.51 4.12 1.42 5.94l3.96-3.21z"/>
+                            <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.65-2.83c-1.01.68-2.3 1.09-4.31 1.09-3.05 0-5.65-2.78-6.57-5.54L1.46 16.03C3.42 20.32 7.4 23 12 23z"/>
+                        </svg>
+                        Continue with Google
+                    </button>
+                    
+                    <div style="text-align: center; font-size: 0.78rem; color: var(--text-sec); font-weight: 600;">
+                        Don't have an account? <a href="#" onclick="showAuthTab('signup')" style="color: var(--primary); font-weight: 800; text-decoration: none;">Sign Up</a>
+                    </div>
                 </div>
             </div>
 
             <!-- 5. OTP Verification Screen -->
             <div id="otpScreen" class="auth-section" style="display:none">
-                <div class="ob-head">
-                    <button class="back-arrow" onclick="cancelOtpFlow()">←</button>
-                    <div>
-                        <div class="auth-title">Verify Your Email</div>
-                        <div class="auth-sub" id="otpSub">We've sent a 6-digit code to your email.</div>
+                <!-- Header (Outside Card) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px;">
+                    <button class="back-arrow" onclick="cancelOtpFlow()" style="margin: 0; background: rgba(119, 117, 135, 0.08); width: 36px; height: 36px; border-radius: 50%; border: none;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12,19 5,12 12,5"/></svg>
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <div style="background: var(--primary-container); color: #FFFFFF; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z M5 13.18v4L12 21l7-3.82v-4L12 17L5 13.18z"/>
+                            </svg>
+                        </div>
+                        <span style="font-size: 0.95rem; font-weight: 800; color: var(--primary);">AttendEase</span>
                     </div>
                 </div>
-                
-                <div class="fl">6-Digit Verification Code</div>
-                <div class="otp-inputs">
-                    <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                    <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                    <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                    <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                    <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                    <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+
+                <!-- Card container -->
+                <div class="card" style="padding: 24px; border-radius: 24px; box-shadow: var(--shadow-card); background: var(--card); border: 1.5px solid var(--border);">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2 class="auth-title" style="font-size: 1.4rem; margin-bottom: 6px;">Verify Your Email</h2>
+                        <p class="auth-sub" id="otpSub" style="font-size: 0.78rem; line-height: 1.4; padding: 0 8px;">Enter the 6-digit code sent to your email to complete your registration and secure your account.</p>
+                    </div>
+                    
+                    <div class="fl" style="text-align: center; margin-bottom: 12px; font-size: 0.72rem; color: var(--text-sec); letter-spacing: 0.5px;">6-DIGIT VERIFICATION CODE</div>
+                    <div class="otp-inputs" style="margin-bottom: 20px;">
+                        <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    </div>
+                    <!-- Hidden input loaded by legacy JS -->
+                    <input type="hidden" id="otpCode">
+                    
+                    <button class="btn btn-or" id="verifyOtpBtn" onclick="handleVerifyOtp()" style="margin-bottom: 16px; font-weight: 800;">Verify OTP</button>
+                    
+                    <div style="text-align: center; font-size: 0.8rem; color: var(--text-sec); font-weight: 500;">
+                        Didn't receive code? 
+                        <button class="btn-link" id="resendOtpBtn" onclick="handleResendOtp()" disabled style="font-weight: 800;">Resend in <span id="otpCountdown">60</span>s</button>
+                    </div>
                 </div>
-                <!-- Hidden input loaded by legacy JS -->
-                <input type="hidden" id="otpCode">
-                
-                <button class="btn btn-or" id="verifyOtpBtn" onclick="handleVerifyOtp()" style="margin-top: 8px; margin-bottom: 16px;">Verify OTP</button>
-                
-                <div style="text-align: center; font-size: 0.8rem; color: var(--text-sec); font-weight: 500;">
-                    Didn't receive code? 
-                    <button class="btn-link" id="resendOtpBtn" onclick="handleResendOtp()" disabled>Resend OTP in <span id="otpCountdown">60</span>s</button>
+
+                <!-- Footer (Outside Card) -->
+                <div style="text-align: center; margin-top: 32px; font-size: 0.65rem; color: var(--text-sec); font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;">
+                    SECURE VERIFICATION BY ATTENDEASE SYSTEMS
                 </div>
             </div>
 
             <!-- 6. Connect AccSoft Screen -->
             <div id="connectScreen" class="auth-section" style="display:none">
-                <div class="ob-head">
-                    <button class="back-arrow" onclick="handleSignOut()">←</button>
-                    <div>
-                        <div class="auth-title">AccSoft</div>
-                        <div class="auth-sub">Connect your AccSoft account securely</div>
+                <!-- Cap Logo and Tagline (Outside Card) -->
+                <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin: 16px 0 16px;">
+                    <div style="background: var(--primary-container); color: #FFFFFF; width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 16px rgba(91, 76, 240, 0.25);">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                            <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z M5 13.18v4L12 21l7-3.82v-4L12 17L5 13.18z"/>
+                        </svg>
                     </div>
-                </div>
-                
-                <div class="fl">Accsoft User ID</div>
-                <input type="text" class="dinput" id="accsoftEnroll" placeholder="Enter Accsoft User ID">
-                
-                <div class="fl">Password</div>
-                <input type="password" class="dinput" id="accsoftPass" placeholder="Enter AccSoft password">
-                
-                <button class="btn btn-or" onclick="handleConnectAccsoft()" style="margin-top: 8px; margin-bottom: 16px;">Connect</button>
-                
-                <!-- Inline loading progress indicator -->
-                <div class="connect-loading-box" id="connectLoading" style="display: none; align-items: center; justify-content: center; gap: 12px; padding: 16px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--card); margin-top: 16px;">
-                    <div class="spin-circle" style="width: 20px; height: 20px; border-width: 2.5px;"></div>
-                    <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-sec);">Connecting to AccSoft...</span>
+                    <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin: 0; letter-spacing: -0.5px;">AttendEase</h1>
+                    <p style="font-size: 0.72rem; font-weight: 600; color: var(--text-sec); margin-top: 4px; margin-bottom: 0; text-transform: uppercase; letter-spacing: 0.5px;">Connect AccSoft portal</p>
                 </div>
 
-                <div style="text-align: center; margin-top: 24px; font-size: 0.7rem; color: var(--text-sec); font-weight: 500;">
+                <!-- Card container -->
+                <div class="card" style="padding: 24px; border-radius: 24px; box-shadow: var(--shadow-card); background: var(--card); border: 1.5px solid var(--border);">
+                    <div class="ob-head" style="margin-bottom: 20px;">
+                        <button class="back-arrow" onclick="handleSignOut()" style="background: rgba(119, 117, 135, 0.08); width: 36px; height: 36px; border-radius: 50%; border: none;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12,19 5,12 12,5"/></svg>
+                        </button>
+                        <div>
+                            <div class="auth-title" style="font-size: 1.35rem;">AccSoft Portal</div>
+                            <div class="auth-sub" style="font-size: 0.76rem;">Secure connection to retrieve attendance logs</div>
+                        </div>
+                    </div>
+                    
+                    <div class="fl">Accsoft User ID</div>
+                    <div style="position: relative; margin-bottom: 12px;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-sec); display: flex; align-items: center; pointer-events: none;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </span>
+                        <input type="text" class="dinput" id="accsoftEnroll" placeholder="Enter Accsoft User ID" style="padding-left: 44px; margin-bottom: 0;">
+                    </div>
+                    
+                    <div class="fl">Password</div>
+                    <div style="position: relative; margin-bottom: 20px;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-sec); display: flex; align-items: center; pointer-events: none;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </span>
+                        <input type="password" class="dinput" id="accsoftPass" placeholder="Enter AccSoft password" style="padding-left: 44px; margin-bottom: 0;">
+                    </div>
+                    
+                    <button class="btn btn-or" onclick="handleConnectAccsoft()" style="margin-bottom: 16px; font-weight: 800;">Connect Account</button>
+                    
+                    <!-- Inline loading progress indicator -->
+                    <div class="connect-loading-box" id="connectLoading" style="display: none; align-items: center; justify-content: center; gap: 12px; padding: 16px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--card); margin-top: 16px;">
+                        <div class="spin-circle" style="width: 20px; height: 20px; border-width: 2.5px;"></div>
+                        <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-sec);">Connecting to AccSoft...</span>
+                    </div>
+                </div>
+
+                <!-- Footer (Outside Card) -->
+                <div style="text-align: center; margin-top: 32px; font-size: 0.65rem; color: var(--text-sec); font-weight: 600; padding: 0 16px; line-height: 1.4;">
                     🔒 We never store your password. It is encrypted and secured.
                 </div>
             </div>
@@ -442,85 +572,136 @@
 
             <!-- 5. SETTINGS VIEW -->
             <div id="v-settings" class="view">
-                <h2 class="preview-title" style="margin-bottom: 12px; font-size: 1.1rem;">Settings</h2>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; padding: 0 4px;">
+                    <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text); margin: 0;">Settings</h2>
+                </div>
                 
                 <!-- Accsoft Connection Status -->
                 <span class="settings-section-title">AccSoft Portal</span>
-                <div class="settings-menu" style="margin-bottom: 16px;">
+                <div class="settings-menu">
+                    <!-- Portal Account -->
                     <div class="settings-item">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">👤</span>
+                            <div class="settings-icon-wrap violet">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </svg>
+                            </div>
                             <div style="display:flex; flex-direction:column;">
                                 <span class="settings-item-name">Portal Account</span>
                                 <span class="settings-item-val" id="settingsEnrollLbl">Accsoft User ID: --</span>
                             </div>
                         </div>
-                        <span class="hero-badge safe" id="settingsConnectionBadge">Connected</span>
+                        <span class="hero-badge safe" id="settingsConnectionBadge" style="margin-left: 8px;">CONNECTED</span>
                     </div>
+                    <!-- Sync Status -->
                     <div class="settings-item" onclick="triggerSyncNow()">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">🔄</span>
+                            <div class="settings-icon-wrap violet">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                                </svg>
+                            </div>
                             <div style="display:flex; flex-direction:column;">
                                 <span class="settings-item-name">Sync Status</span>
                                 <span class="settings-item-val" id="settingsLastSyncLbl">Last Synced: --</span>
                             </div>
                         </div>
-                        <span class="settings-arrow">></span>
+                        <span class="settings-arrow">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </span>
                     </div>
-                    <button class="settings-item" onclick="openReconnectForm()" style="border:none;">
+                    <!-- Reconnect Accsoft -->
+                    <button class="settings-item" onclick="openReconnectForm()" style="border:none; background:none;">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">✏️</span>
+                            <div class="settings-icon-wrap violet">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </div>
                             <span class="settings-item-name">Reconnect AccSoft</span>
                         </div>
-                        <span class="settings-arrow">></span>
+                        <span class="settings-arrow">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </span>
                     </button>
-                    <button class="settings-item" onclick="handleDisconnectAccsoft()" style="color: var(--red); border:none;">
+                    <!-- Disconnect Portal -->
+                    <button class="settings-item" onclick="handleDisconnectAccsoft()" style="color: var(--red); border:none; background:none;">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">🗑️</span>
-                            <span class="settings-item-name">Disconnect Portal</span>
+                            <div class="settings-icon-wrap red">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                </svg>
+                            </div>
+                            <span class="settings-item-name" style="color: var(--red);">Disconnect Portal</span>
                         </div>
-                        <span class="settings-arrow">></span>
+                        <span class="settings-arrow" style="color: var(--red);">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </span>
                     </button>
                 </div>
 
                 <!-- Account Settings -->
                 <span class="settings-section-title">Account</span>
-                <div class="settings-menu" style="margin-bottom: 16px;">
+                <div class="settings-menu">
+                    <!-- Profile detail -->
                     <div class="settings-item">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">🎓</span>
+                            <div style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; margin-right: 12px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; background: rgba(91, 76, 240, 0.05); flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--primary)" stroke-width="1.5">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
                             <div style="display:flex; flex-direction:column;">
                                 <span class="settings-item-name" id="settingsProfileName">--</span>
                                 <span class="settings-item-val" id="settingsProfileEmail">--</span>
                             </div>
                         </div>
+                        <span style="color: var(--text-sec); opacity: 0.6;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        </span>
                     </div>
-                    <button class="settings-item" onclick="handleSignOut()" style="color: var(--red); border:none;">
+                    <!-- Log Out -->
+                    <button class="settings-item" onclick="handleSignOut()" style="color: var(--red); border:none; background:none;">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">🚪</span>
-                            <span class="settings-item-name">Log Out</span>
+                            <div class="settings-icon-wrap red" style="background: rgba(239, 68, 68, 0.08);">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L13.67 11H3v2h10.67l-3.58 3.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                                </svg>
+                            </div>
+                            <span class="settings-item-name" style="color: var(--text);">Log Out</span>
                         </div>
-                        <span class="settings-arrow">></span>
+                        <span class="settings-arrow">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </span>
                     </button>
                 </div>
 
                 <!-- Preferences Settings -->
                 <span class="settings-section-title">Preferences</span>
-                <div class="settings-menu" style="margin-bottom: 16px;">
+                <div class="settings-menu">
+                    <!-- Light Mode Toggle -->
                     <div class="settings-item">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">🌙</span>
+                            <div class="settings-icon-wrap violet">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992V3z"/>
+                                </svg>
+                            </div>
                             <span class="settings-item-name">Light Mode Toggle</span>
                         </div>
                         <label class="switch">
-                            <!-- Toggle references legacy JS function -->
                             <input type="checkbox" id="themeBtn" onchange="toggleTheme()" checked>
                             <span class="slider"></span>
                         </label>
                     </div>
+                    <!-- Notifications -->
                     <div class="settings-item">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">🔔</span>
+                            <div class="settings-icon-wrap violet">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                                </svg>
+                            </div>
                             <span class="settings-item-name">Notifications</span>
                         </div>
                         <label class="switch">
@@ -528,50 +709,49 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="settings-item">
-                        <div class="settings-item-left">
-                            <span class="settings-item-icon">🚀</span>
-                            <span class="settings-item-name">Sync on Start</span>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
                 </div>
 
-                <!-- About Section -->
+                <!-- Support Section -->
                 <span class="settings-section-title">Support</span>
                 <div class="settings-menu">
                     <div class="settings-item">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">ℹ️</span>
+                            <div class="settings-icon-wrap grey">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+                                </svg>
+                            </div>
                             <span class="settings-item-name">Help & Support</span>
                         </div>
-                        <span class="settings-arrow">></span>
-                    </div>
-                    <div class="settings-item">
-                        <div class="settings-item-left">
-                            <span class="settings-item-icon">📱</span>
-                            <span class="settings-item-name">About App (v1.1.0)</span>
-                        </div>
-                        <span class="settings-arrow">></span>
+                        <span class="settings-arrow">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </span>
                     </div>
                 </div>
 
                 <!-- App Install & Info -->
                 <span class="settings-section-title">Application</span>
-                <div class="settings-menu" style="margin-top: 8px; margin-bottom: 24px;">
-                    <button class="settings-item" id="pwaInstallItem" style="border:none; display:none; width: 100%; text-align: left; background: none; cursor: pointer; padding: 12px 16px;">
+                <div class="settings-menu" style="margin-bottom: 24px;">
+                    <button class="settings-item" id="pwaInstallItem" style="border:none; display:none; width: 100%; text-align: left; background: none; cursor: pointer;">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">📲</span>
+                            <div class="settings-icon-wrap violet">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                                </svg>
+                            </div>
                             <span class="settings-item-name">Install AttendEase App</span>
                         </div>
-                        <span class="settings-arrow">></span>
+                        <span class="settings-arrow">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </span>
                     </button>
                     <div class="settings-item">
                         <div class="settings-item-left">
-                            <span class="settings-item-icon">⚡</span>
+                            <div class="settings-icon-wrap grey">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                                </svg>
+                            </div>
                             <div style="display:flex; flex-direction:column;">
                                 <span class="settings-item-name">Version</span>
                                 <span class="settings-item-val">v1.1.0 (PWA-ready)</span>
@@ -610,21 +790,31 @@
 
     <!-- SYNCING MODAL -->
     <div class="modal-bg hidden" id="syncingModal">
-        <div class="modal">
-            <div class="spin-circle" style="width:40px; height:40px; border-width: 4px; margin-bottom: 20px;"></div>
-            <h3 class="modal-title">Syncing Attendance</h3>
-            <p class="modal-sub">Fetching latest database records from the AccSoft portal.</p>
+        <div class="modal" style="padding: 28px 24px; border-radius: 28px; max-width: 340px;">
+            <div style="position: relative; width: 56px; height: 56px; margin-bottom: 18px; display: flex; align-items: center; justify-content: center; background: rgba(91, 76, 240, 0.08); border-radius: 50%; color: var(--primary);">
+                <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" class="spin-animation">
+                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                </svg>
+            </div>
+            <h3 class="modal-title" style="font-size: 1.25rem; font-weight: 800; color: var(--text); margin-bottom: 6px;">Syncing Attendance</h3>
+            <p class="modal-sub" style="font-size: 0.8rem; color: var(--text-sec); margin-bottom: 20px; line-height: 1.4;">Fetching latest database records from the AccSoft portal.</p>
             
-            <div style="display:flex; flex-direction:column; gap: 8px; width: 100%; text-align: left; margin-bottom: 20px;">
-                <div id="syncStepLogin" style="font-size: .82rem; color: var(--text-sec); font-weight: 600;">⏳ logging to accsoft</div>
-                <div id="syncStepFetch" style="font-size: .82rem; color: var(--text-sec); font-weight: 600;">⏳ fetching attendance</div>
-                <div id="syncStepSave" style="font-size: .82rem; color: var(--text-sec); font-weight: 600;">⏳ fetched saved to database</div>
+            <div style="display:flex; flex-direction:column; gap: 12px; width: 100%; text-align: left; margin-bottom: 24px;">
+                <div id="syncStepLogin" style="font-size: .86rem; color: var(--text-sec); font-weight: 600; display: flex; align-items: center;">
+                    <span class="sync-bullet pending"></span> logging to accsoft
+                </div>
+                <div id="syncStepFetch" style="font-size: .86rem; color: var(--text-sec); font-weight: 600; display: flex; align-items: center;">
+                    <span class="sync-bullet pending"></span> fetching attendance
+                </div>
+                <div id="syncStepSave" style="font-size: .86rem; color: var(--text-sec); font-weight: 600; display: flex; align-items: center;">
+                    <span class="sync-bullet pending"></span> fetched saved to database
+                </div>
             </div>
             
-            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 8px; width: 100%;">
-                <div id="syncProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width .3s;"></div>
+            <div style="height: 6px; background: rgba(119, 117, 135, 0.12); border-radius: 999px; overflow: hidden; margin-bottom: 8px; width: 100%;">
+                <div id="syncProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width .3s; border-radius: 999px;"></div>
             </div>
-            <div id="syncProgressText" style="font-size: .74rem; color: var(--text-sec); font-weight: 700;">0 / 3</div>
+            <div id="syncProgressText" style="font-size: .76rem; color: var(--text-sec); font-weight: 800; text-align: right; width: 100%;">0 / 3</div>
         </div>
     </div>
 

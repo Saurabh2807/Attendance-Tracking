@@ -1076,12 +1076,12 @@ async function triggerSyncNow() {
 
         // Reset Sync Progress UI
         modal.classList.remove('hidden');
-        stepLogin.textContent = '⏳ logging to accsoft';
-        stepLogin.style.color = 'var(--text3)';
-        stepFetch.textContent = '⏳ fetching attendance';
-        stepFetch.style.color = 'var(--text3)';
-        stepSave.textContent = '⏳ fetched saved to database';
-        stepSave.style.color = 'var(--text3)';
+        stepLogin.innerHTML = '<span class="sync-bullet pending"></span> logging to accsoft';
+        stepLogin.style.color = 'var(--text-sec)';
+        stepFetch.innerHTML = '<span class="sync-bullet pending"></span> fetching attendance';
+        stepFetch.style.color = 'var(--text-sec)';
+        stepSave.innerHTML = '<span class="sync-bullet pending"></span> fetched saved to database';
+        stepSave.style.color = 'var(--text-sec)';
         bar.style.width = '0%';
         text.textContent = '0 / 3';
 
@@ -1183,42 +1183,44 @@ async function triggerSyncNow() {
 
         // Step 1: Logging in (0.4s)
         addProgressStep(400, () => {
-            stepLogin.textContent = '🔄 logging to accsoft...';
-            stepLogin.style.color = 'var(--yellow)';
+            stepLogin.innerHTML = '<span class="sync-bullet active"></span> logging to accsoft...';
+            stepLogin.style.color = 'var(--primary)';
             bar.style.width = '15%';
             text.textContent = '0.5 / 3';
         });
 
         // Step 2: Cold start wake up (10s)
         addProgressStep(10000, () => {
-            stepLogin.textContent = '🔄 logging to accsoft...';
+            stepLogin.innerHTML = '<span class="sync-bullet active"></span> logging to accsoft...';
+            stepLogin.style.color = 'var(--primary)';
             bar.style.width = '30%';
             text.textContent = '1.0 / 3';
         });
 
         // Step 3: Fetching attendance data (20s)
         addProgressStep(20000, () => {
-            stepLogin.textContent = '✅ logging to accsoft';
+            stepLogin.innerHTML = '<span class="sync-bullet done"></span> logging to accsoft';
             stepLogin.style.color = 'var(--green)';
-            stepFetch.textContent = '🔄 fetching attendance...';
-            stepFetch.style.color = 'var(--yellow)';
+            stepFetch.innerHTML = '<span class="sync-bullet active"></span> fetching attendance...';
+            stepFetch.style.color = 'var(--primary)';
             bar.style.width = '50%';
             text.textContent = '1.5 / 3';
         });
 
         // Step 4: Scraping taking longer (35s)
         addProgressStep(35000, () => {
-            stepFetch.textContent = '🔄 fetching attendance...';
+            stepFetch.innerHTML = '<span class="sync-bullet active"></span> fetching attendance...';
+            stepFetch.style.color = 'var(--primary)';
             bar.style.width = '70%';
             text.textContent = '2.0 / 3';
         });
 
         // Step 5: Saving to database (55s)
         addProgressStep(55000, () => {
-            stepFetch.textContent = '✅ fetching attendance';
+            stepFetch.innerHTML = '<span class="sync-bullet done"></span> fetching attendance';
             stepFetch.style.color = 'var(--green)';
-            stepSave.textContent = '🔄 fetched saved to database...';
-            stepSave.style.color = 'var(--yellow)';
+            stepSave.innerHTML = '<span class="sync-bullet active"></span> fetched saved to database...';
+            stepSave.style.color = 'var(--primary)';
             bar.style.width = '85%';
             text.textContent = '2.5 / 3';
         });
@@ -1256,15 +1258,15 @@ async function triggerSyncNow() {
             isSyncFinished = true;
 
             // Fast forward animations to success state
-            stepLogin.textContent = '✅ logging to accsoft';
+            stepLogin.innerHTML = '<span class="sync-bullet done"></span> logging to accsoft';
             stepLogin.style.color = 'var(--green)';
             bar.style.width = '33%';
             
-            stepFetch.textContent = '✅ fetching attendance';
+            stepFetch.innerHTML = '<span class="sync-bullet done"></span> fetching attendance';
             stepFetch.style.color = 'var(--green)';
             bar.style.width = '66%';
             
-            stepSave.textContent = '✅ fetched saved to database';
+            stepSave.innerHTML = '<span class="sync-bullet done"></span> fetched saved to database';
             stepSave.style.color = 'var(--green)';
             bar.style.width = '100%';
             text.textContent = '3 / 3';
@@ -1895,17 +1897,29 @@ function renderInsights() {
             const safeBunk = Math.floor((s.present - 0.75 * s.held) / 0.75);
             if (safeBunk > 0) {
                 const card = document.createElement('div');
-                card.className = 'insight-card';
+                card.className = 'insight-card glass-card';
                 card.style.borderColor = 'rgba(46, 204, 113, 0.2)';
                 card.style.background = 'var(--green-dim)';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.gap = '12px';
                 card.onclick = () => showSubjectDetail(s.subject_name);
                 card.innerHTML = `
-                    <div class="insight-left">
-                        <span class="insight-tag" style="color: var(--green);">Bunk Prediction</span>
-                        <span class="insight-title" style="color: var(--green);">${safeBunk} classes</span>
-                        <span class="insight-sub">Safe to skip in ${s.subject_name}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                        <div class="insight-left">
+                            <span class="insight-tag" style="color: var(--green);">Bunk Prediction</span>
+                            <span class="insight-title" style="color: var(--green); font-size: 1.4rem; font-weight: 800;">${safeBunk} classes</span>
+                            <span class="insight-sub" style="margin-top: 4px;">Safe to skip in <span style="text-transform: uppercase;">${s.subject_name}</span></span>
+                        </div>
+                        <div style="background: rgba(46, 204, 113, 0.12); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--green);">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-12c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                            </svg>
+                        </div>
                     </div>
-                    <div class="insight-right">🎯</div>
+                    <div style="height: 6px; width: 100%; background: rgba(119, 117, 135, 0.12); border-radius: 999px; overflow: hidden;">
+                        <div style="height: 100%; width: ${Math.min(100, s.percentage)}%; background: var(--green); border-radius: 999px;"></div>
+                    </div>
                 `;
                 container.appendChild(card);
             }
@@ -1914,17 +1928,29 @@ function renderInsights() {
             const mustAttend = Math.ceil((0.75 * s.held - s.present) / 0.25);
             if (mustAttend > 0) {
                 const card = document.createElement('div');
-                card.className = 'insight-card';
+                card.className = 'insight-card glass-card';
                 card.style.borderColor = 'rgba(231, 76, 60, 0.2)';
                 card.style.background = 'var(--red-dim)';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.gap = '12px';
                 card.onclick = () => showSubjectDetail(s.subject_name);
                 card.innerHTML = `
-                    <div class="insight-left">
-                        <span class="insight-tag" style="color: var(--red);">Attendance Goal</span>
-                        <span class="insight-title" style="color: var(--red);">${mustAttend} consecutive</span>
-                        <span class="insight-sub">Must attend classes in ${s.subject_name}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                        <div class="insight-left">
+                            <span class="insight-tag" style="color: var(--red);">Attendance Goal</span>
+                            <span class="insight-title" style="color: var(--red); font-size: 1.4rem; font-weight: 800;">${mustAttend} consecutive</span>
+                            <span class="insight-sub" style="margin-top: 4px;">Must attend classes in <span style="text-transform: uppercase;">${s.subject_name}</span></span>
+                        </div>
+                        <div style="background: rgba(231, 76, 60, 0.12); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--red);">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                            </svg>
+                        </div>
                     </div>
-                    <div class="insight-right">⚠️</div>
+                    <div style="height: 6px; width: 100%; background: rgba(119, 117, 135, 0.12); border-radius: 999px; overflow: hidden;">
+                        <div style="height: 100%; width: ${Math.min(100, s.percentage)}%; background: var(--red); border-radius: 999px;"></div>
+                    </div>
                 `;
                 container.appendChild(card);
             }
@@ -1943,17 +1969,30 @@ function renderInsights() {
 
     if (lowestSub) {
         const card = document.createElement('div');
-        card.className = 'insight-card';
+        card.className = 'insight-card glass-card';
         card.style.borderColor = 'rgba(230, 126, 34, 0.2)';
         card.style.background = 'var(--orange-dim)';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.gap = '12px';
         card.onclick = () => showSubjectDetail(lowestSub.subject_name);
         card.innerHTML = `
-            <div class="insight-left">
-                <span class="insight-tag" style="color: var(--orange);">Lowest Attendance</span>
-                <span class="insight-title" style="color: var(--orange);">${lowestSub.subject_name}</span>
-                <span class="insight-sub">Has your lowest attendance (${lowestPerc.toFixed(1)}%). Try to improve!</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                <div class="insight-left">
+                    <span class="insight-tag" style="color: var(--orange);">Lowest Attendance</span>
+                    <span class="insight-title" style="color: var(--orange); font-size: 1.25rem; font-weight: 800; text-transform: uppercase;">${lowestSub.subject_name}</span>
+                    <span class="insight-sub" style="margin-top: 4px;">Has your lowest attendance (${lowestPerc.toFixed(1)}%). Try to improve!</span>
+                </div>
+                <div style="background: rgba(230, 126, 34, 0.12); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--orange);">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                        <polyline points="17 6 23 6 23 12"/>
+                    </svg>
+                </div>
             </div>
-            <div class="insight-right">📈</div>
+            <div style="height: 6px; width: 100%; background: rgba(119, 117, 135, 0.12); border-radius: 999px; overflow: hidden;">
+                <div style="height: 100%; width: ${Math.min(100, lowestPerc)}%; background: var(--orange); border-radius: 999px;"></div>
+            </div>
         `;
         container.appendChild(card);
     }
