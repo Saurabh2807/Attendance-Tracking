@@ -1000,6 +1000,10 @@ async function handleConnectAccsoft() {
         // Refresh connection details locally and load dashboard directly
         await checkConnectionAndLoadData(connObj);
 
+        // Auto-trigger sync on first connection
+        console.log("[CONNECT] Auto-triggering first sync...");
+        triggerSyncNow();
+
     } catch (err) {
         if (connectLoading) connectLoading.style.display = 'none';
         toast(`❌ ${err.message}`);
