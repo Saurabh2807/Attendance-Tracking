@@ -3,12 +3,12 @@
     --primary-light: rgba(66, 44, 216, 0.08);
     --primary-glow: rgba(91, 76, 240, 0.15);
     --primary-container: #5b4cf0;
-    --bg: #F8FAFC;
-    --card: #FFFFFF;
-    --text: #1F2937;
-    --text-sec: #4B5563;
-    --text-muted: #6B7280;
-    --border: #E5E7EB;
+    --bg: #fcf9f8;
+    --card: rgba(255, 255, 255, 0.7);
+    --text: #1c1b1b;
+    --text-sec: #474555;
+    --text-muted: #777587;
+    --border: rgba(255, 255, 255, 0.4);
     --green: #10B981;
     --green-dim: rgba(16, 185, 129, 0.1);
     --orange: #F59E0B;
@@ -19,12 +19,12 @@
     --blue-dim: rgba(52, 152, 219, 0.1);
     --radius: 24px;
     --radius-lg: 32px;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.03);
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.02);
+    --shadow: 0 10px 30px rgba(66, 44, 216, 0.04);
+    --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.02);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --glass-stroke: #E5E7EB;
-    --glass-bg: #FFFFFF;
+    --glass-stroke: rgba(255, 255, 255, 0.4);
+    --glass-bg: rgba(255, 255, 255, 0.7);
 }
 
 body:not(.lm) {
@@ -1426,13 +1426,12 @@ input:checked + .slider:before {
 /* Day-wise Logs on Dashboard */
 .day-card {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: var(--radius);
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-card);
     overflow: hidden;
-    margin-bottom: 24px;
 }
 .day-header {
     background: rgba(119, 117, 135, 0.06);
@@ -1519,12 +1518,12 @@ input:checked + .slider:before {
     text-align: center;
 }
 .day-class-status.present {
-    background: #E6F4EA !important;
-    color: #137333 !important;
+    background: var(--green-dim);
+    color: var(--green);
 }
 .day-class-status.absent {
-    background: #FCE8E6 !important;
-    color: #C5221F !important;
+    background: var(--red-dim);
+    color: var(--red);
 }
 
 /* Home Page Insights Layout Tweak */
@@ -1573,8 +1572,8 @@ input:checked + .slider:before {
 
 /* Status Pill Pending Styles */
 .day-class-status.pending {
-    background: #F1F3F4 !important;
-    color: #5F6368 !important;
+    background: rgba(119, 117, 135, 0.12) !important;
+    color: var(--text-sec) !important;
 }
 
 /* Subject Bento Card Styling (Stitch Style) */

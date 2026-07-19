@@ -1558,7 +1558,7 @@ function renderDashboard() {
             recSubEl.textContent = "Great job! Keep attending your classes to stay above 75%.";
             if (recCardEl) {
                 recCardEl.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
-                recCardEl.style.boxShadow = '0 8px 30px rgba(16, 185, 129, 0.12)';
+                recCardEl.style.boxShadow = '0 10px 24px rgba(16, 185, 129, 0.2)';
             }
         } else {
             const mustAttendOverall = Math.ceil((0.75 * totalHeld - totalPresent) / 0.25);
@@ -1571,7 +1571,7 @@ function renderDashboard() {
             }
             if (recCardEl) {
                 recCardEl.style.background = 'linear-gradient(135deg, #7B61FF 0%, #5B4CF0 100%)';
-                recCardEl.style.boxShadow = '0 8px 30px rgba(91, 76, 240, 0.12)';
+                recCardEl.style.boxShadow = '0 10px 24px rgba(91, 76, 240, 0.2)';
             }
         }
     }
@@ -1717,7 +1717,7 @@ function renderDashboard() {
                     const statusClass = isPresent ? 'present' : (isAbsent ? 'absent' : 'pending');
 
                     classesHtml += `
-                        <div class="day-class-item" onclick="showSubjectDetail('${c.subject_name}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid rgba(119, 117, 135, 0.06);">
+                        <div class="day-class-item" onclick="showSubjectDetail('${c.subject_name}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid rgba(119, 117, 135, 0.06);">
                             <div class="day-class-info" style="margin: 0; padding: 0; flex: 1;">
                                 <span class="day-class-subject" style="font-size: 0.92rem; font-weight: 700; color: var(--text);">${toTitleCase(c.subject_name)}</span>
                             </div>
