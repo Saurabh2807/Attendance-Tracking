@@ -62,10 +62,13 @@ body:not(.lm) {
 html {
     scroll-behavior: smooth;
     background: #EAEBF2;
+    height: 100%;
 }
 
 body {
     min-height: 100vh;
+    min-height: 100dvh;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -140,7 +143,7 @@ body:not(.lm) #ob::after, body:not(.lm) #app::after {
 }
 
 @media (max-width: 768px) {
-    body {
+    html, body {
         background: var(--bg) !important;
     }
     #ob, #app {
@@ -513,6 +516,7 @@ body:not(.lm) .btn-google:hover {
     position: sticky;
     top: 0;
     z-index: 100;
+    padding-top: env(safe-area-inset-top, 0px);
 }
 
 .hinner {
@@ -571,7 +575,7 @@ body:not(.lm) .btn-google:hover {
 .page {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 18px 90px;
+    padding: 20px 18px 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -1141,10 +1145,6 @@ body:not(.lm) .btn-google:hover {
 
 /* ---- BOTTOM NAVIGATION BAR ---- */
 .nav {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
     z-index: 500;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
