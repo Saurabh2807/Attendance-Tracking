@@ -852,9 +852,7 @@ async function handleGoogleSignIn() {
         return;
     }
     try {
-        const redirectUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? window.location.origin + window.location.pathname
-            : 'https://saurabh2807.github.io/Attendance-Tracking/';
+        const redirectUrl = window.location.origin + window.location.pathname;
 
         const { error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
